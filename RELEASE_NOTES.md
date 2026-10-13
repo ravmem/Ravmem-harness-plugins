@@ -47,18 +47,22 @@ Requires a RavMem server with the MCP revamp (the `/mcp` endpoint with 18 tools,
 
 ### Verified against the new server image
 
-Tested against `ampaulravmem/ravmem:mcp-revamp` (encrypted, amd64) in the docker-compose stack: 127 of 128
-MCP checks passed covering the protocol (three protocol versions, auth, malformed input), all 18 tools with
-happy and error paths, 6 resources, 5 prompts, memory isolation between teams, and the plan's connection limit.
-Behaviors worth knowing:
+Tested against `ampaulravmem/ravmem:mcp-revamp` (encrypted, amd64) running in the docker-compose stack: 127 of
+128 MCP checks passed on the first build, covering the protocol (three protocol versions, auth, malformed
+input), all 18 tools with happy and error paths, 6 resources, 5 prompts, memory isolation between teams, and
+the plan's connection limit. The one failure, `from package import module` imports not appearing in
+`code_relations`, and four behaviors the guidance had to work around are fixed in the next server build;
+this release's guidance assumes that build:
 
-- `memory_load_context(task_id)` does not show the task's own new, unvalidated learnings or decisions; resume a
-  task with `memory_get(task_id)`. A completed task stays listed by `memory_list` with `status: completed`.
-- The plan limits concurrent connections (5 on the beta plan); extra requests get HTTP 429 with `Retry-After`.
-- `code_relations` does not yet resolve `from package import module` (or `from . import module`) imports;
-  `from package.module import name` works.
-- The code tools use the project's default branch; if it differs from the indexed branch, they answer with
-  the list of available branches.
+- `memory_load_context(task_id)` includes the task's own learnings and decisions.
+- `memory_list` hides completed tasks unless `include_completed` is true.
+- `code_relations` resolves `from package import module`, `from . import module` and parenthesised imports
+  (re-index a project to pick this up). Plain `import x` and imports inside functions are still not tracked.
+- A request refused for the plan's concurrent-connection limit (5 on the beta plan) returns HTTP 429 with
+  `Retry-After` and a JSON-RPC error body.
+
+Also worth knowing: the code tools use the project's default branch; if it differs from the indexed branch they
+answer with the list of available branches.
 
 ### Known limitations
 

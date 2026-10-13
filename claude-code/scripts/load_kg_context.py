@@ -39,7 +39,7 @@ def main() -> int:
         lines.append(f"  - [{t.get('id', '?')}] {t.get('label') or 'Untitled task'} (type: {task_type})")
     if len(tasks) > MAX_TASKS:
         lines.append(f"  ... and {len(tasks) - MAX_TASKS} more (memory_list with node_type=\"Task\").")
-    lines.append("Resume one with memory_get (node_id = the task id). Standing instructions: memory_load_context with no arguments.")
+    lines.append("Resume one with memory_load_context (task_id). Standing instructions: memory_load_context with no arguments.")
     print("\n".join(lines))
     return 0
 

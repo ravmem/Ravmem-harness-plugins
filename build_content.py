@@ -116,11 +116,11 @@ config (defaults `default` and `global`), so you never pass them as arguments.
 ### Start of a session
 1. `memory_load_context()` with no arguments returns the standing instructions (critical first) and
    conditions. Follow them.
-2. `memory_list(node_type="Task")` lists tasks; a finished one stays listed with `status: completed`, so
-   look at each task's `status`. To resume a task, call `memory_get(task_id)`: its links are the learnings,
-   decisions and blockers recorded for it. `memory_load_context(task_id)` adds the standing instructions and
-   conditions that apply to it, learnings that have been validated (confidence 0.7 or more), and decisions from
-   similar past tasks — it does not show this task's own new, unvalidated records.
+2. `memory_list(node_type="Task")` shows tasks still in progress; add `include_completed=true` to see
+   finished ones. To resume a task, call `memory_load_context(task_id)`: it returns the learnings, decisions
+   and open blockers recorded for that task, the standing instructions and conditions that apply to it,
+   validated learnings and decisions from similar past tasks, and the code symbols they are linked to.
+   `memory_get(task_id)` shows the same records as graph links.
 3. Starting something new that is worth tracking: `memory_task(action="start", label, task_type, repo_id,
    git_branch)` and keep the returned task id.
 
@@ -152,7 +152,7 @@ config (defaults `default` and `global`), so you never pass them as arguments.
 There is no transfer token. Before you stop, record what the next session needs — the current task
 (`memory_task`), settled decisions, open blockers, and a `memory_record(kind="context")` note listing the
 active files and next steps (give the note a clear label naming the task). The next tool finds the task with
-`memory_list(node_type="Task")`, reads what was recorded with `memory_get(task_id)`, and uses
+`memory_list(node_type="Task")`, reads what was recorded with `memory_load_context(task_id)`, and uses
 `memory_search` for the context note.
 
 ### Prompts
