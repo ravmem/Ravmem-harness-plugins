@@ -20,8 +20,9 @@ Requires a RavMem server with the MCP revamp (the `/mcp` endpoint with 18 tools,
   blockers and a context note in memory (the server's `session_handoff` prompt does this); the next tool loads
   them with `memory_list` and `memory_load_context`.
 - **`ravmem_onboard_repo` removed.** An MCP server cannot read your disk. Index a repository with
-  `ravmem analyze . --wait` (from `pip install ravmem-cli`); `project_sync` then keeps server-cloned projects
-  current and `ravmem analyze . --incremental` updates uploaded ones.
+  `ravmem remote add . --name <project>` then `ravmem analyze . --project <project> --wait` (from
+  `pip install ravmem-cli`); `project_sync` then keeps server-cloned projects current and
+  `ravmem analyze . --project <project> --incremental` updates uploaded ones.
 - **Claude Desktop `.dxt` bundle removed.** It packaged the bridge. Claude Desktop is now configured through
   `claude_desktop_config.json` using the standard `mcp-remote` package (needs Node.js).
 
@@ -43,6 +44,21 @@ Requires a RavMem server with the MCP revamp (the `/mcp` endpoint with 18 tools,
   marker file. All exit quietly if the server is unreachable.
 - Tokens are not written into project files: Cursor and Codex read `RAVMEM_TOKEN`; Antigravity project mode
   leaves a placeholder (use `--global` for a private config).
+
+### Verified against the new server image
+
+Tested against `ampaulravmem/ravmem:mcp-revamp` (encrypted, amd64) in the docker-compose stack: 127 of 128
+MCP checks passed covering the protocol (three protocol versions, auth, malformed input), all 18 tools with
+happy and error paths, 6 resources, 5 prompts, memory isolation between teams, and the plan's connection limit.
+Behaviors worth knowing:
+
+- `memory_load_context(task_id)` does not show the task's own new, unvalidated learnings or decisions; resume a
+  task with `memory_get(task_id)`. A completed task stays listed by `memory_list` with `status: completed`.
+- The plan limits concurrent connections (5 on the beta plan); extra requests get HTTP 429 with `Retry-After`.
+- `code_relations` does not yet resolve `from package import module` (or `from . import module`) imports;
+  `from package.module import name` works.
+- The code tools use the project's default branch; if it differs from the indexed branch, they answer with
+  the list of available branches.
 
 ### Known limitations
 
