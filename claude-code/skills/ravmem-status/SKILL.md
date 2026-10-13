@@ -12,8 +12,9 @@ Use for diagnostics, not routine navigation.
 - `project_sync(project, branch?, mode="auto")` — bring the index up to date. It fetches new commits for
   projects the server has cloned and re-indexes only what changed. It waits up to `wait_seconds`
   (default 20, max 50) and reports progress; if the job is still running it returns the job id.
-  Projects that were uploaded from a laptop (no remote on the server) can't be fetched this way:
-  re-run `ravmem analyze --incremental --wait` from the repo instead.
+  For a project uploaded from a laptop there is no remote to fetch: `project_sync` only re-indexes the files
+  already stored on the server, so new local commits need `ravmem analyze . --project <project> --incremental
+  --wait` from the repo.
 - `jobs(job_id)` — one job's status and progress; `jobs(project=…, branch=…)` — recent jobs. Use it to
   see whether an indexing job is running, failed or stuck, especially after onboarding or a re-index.
 

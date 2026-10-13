@@ -34,9 +34,10 @@ The server exposes 18 tools, 6 resource templates and 5 prompts (`GET <server>/a
 - A token. The admin token is printed once at server start; for day-to-day use create a user token with
   `ravmem auth create-token`. Reading needs `repo:read`, `branch:read`, `job:read`, `kg:read`; recording memory
   needs `kg:write`; `project_sync` needs `branch:index`; validating and promoting learnings needs `kg:validate`.
-- To index a repository from your machine: `pip install ravmem-cli`, then `ravmem analyze . --wait`.
+- To index a repository from your machine: `pip install ravmem-cli`, then `ravmem remote add . --name <project>` and
+  `ravmem analyze . --project <project> --wait`.
   An MCP server cannot read your disk, so the first upload is a CLI step; afterwards `project_sync` keeps
-  server-cloned projects fresh and `ravmem analyze . --incremental` updates uploaded ones.
+  server-cloned projects fresh and `ravmem analyze . --project <project> --incremental` updates uploaded ones.
 
 ## Memory scope
 

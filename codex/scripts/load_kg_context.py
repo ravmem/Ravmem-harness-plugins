@@ -27,6 +27,8 @@ def main() -> int:
         tasks = list_nodes("Task", active_only=True, timeout=3.0)
     except RavMemError:
         return 0
+    # A finished task stays active in the graph with status "completed"; only list work still in progress.
+    tasks = [t for t in tasks if (t.get("status") or (t.get("properties") or {}).get("status")) != "completed"]
     if not tasks:
         return 0
 
@@ -37,7 +39,7 @@ def main() -> int:
         lines.append(f"  - [{t.get('id', '?')}] {t.get('label') or 'Untitled task'} (type: {task_type})")
     if len(tasks) > MAX_TASKS:
         lines.append(f"  ... and {len(tasks) - MAX_TASKS} more (memory_list with node_type=\"Task\").")
-    lines.append("Load one with the memory_load_context tool (task_id). Standing instructions: memory_load_context with no arguments.")
+    lines.append("Resume one with memory_get (node_id = the task id). Standing instructions: memory_load_context with no arguments.")
     print("\n".join(lines))
     return 0
 
