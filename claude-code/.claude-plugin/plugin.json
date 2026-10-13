@@ -1,0 +1,70 @@
+{
+  "name": "ravmem",
+  "displayName": "RavMem",
+  "version": "0.2.0",
+  "description": "Code-graph search, impact analysis, and persistent cross-session agent memory for this repo, backed by a self-hosted RavMem server over standard MCP.",
+  "author": {
+    "name": "RavMem"
+  },
+  "keywords": [
+    "code-graph",
+    "memory",
+    "mcp",
+    "search",
+    "impact-analysis"
+  ],
+  "userConfig": {
+    "server_url": {
+      "type": "string",
+      "title": "RavMem server URL",
+      "description": "Base URL of your RavMem server, without /mcp and without a trailing slash. The plugin connects to <URL>/mcp.",
+      "required": true,
+      "default": "http://localhost:7432"
+    },
+    "token": {
+      "type": "string",
+      "title": "RavMem API token",
+      "description": "The admin token printed once at server startup, or a user token from 'ravmem auth create-token'. Needs at least repo:read, branch:read and kg:read; add kg:write to record memory and branch:index for project_sync.",
+      "sensitive": true,
+      "required": true
+    },
+    "kg_team": {
+      "type": "string",
+      "title": "Memory team",
+      "description": "Which team's memory to read and write (sent as X-KG-Team).",
+      "required": false,
+      "default": "default"
+    },
+    "kg_branch": {
+      "type": "string",
+      "title": "Memory branch",
+      "description": "Which knowledge-graph branch to use (sent as X-KG-Branch).",
+      "required": false,
+      "default": "global"
+    },
+    "kg_auto_load": {
+      "type": "boolean",
+      "title": "Auto-load active tasks into session",
+      "description": "At session start, list the team's open tasks in context. The full task context is loaded on demand with memory_load_context.",
+      "required": false,
+      "default": true
+    },
+    "kg_auto_record": {
+      "type": "boolean",
+      "title": "Auto-record decisions and learnings",
+      "description": "Allow the agent to record architectural decisions and learnings to memory as it works.",
+      "required": false,
+      "default": true
+    },
+    "kg_prune_stale_days": {
+      "type": "number",
+      "title": "KG stale pruning threshold (days)",
+      "description": "Age threshold in days for flagging inactive or uncorroborated learnings during pruning.",
+      "required": false,
+      "default": 30
+    }
+  },
+  "mcpServers": "./.mcp.json",
+  "skills": "./skills",
+  "hooks": "./hooks/hooks.json"
+}

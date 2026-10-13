@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "ravmem": {
+      "type": "http",
+      "url": "${user_config.server_url}/mcp",
+      "headers": {
+        "Authorization": "Bearer ${user_config.token}",
+        "X-KG-Team": "${user_config.kg_team}",
+        "X-KG-Branch": "${user_config.kg_branch}"
+      }
+    }
+  }
+}

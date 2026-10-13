@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "ravmem": {
+      "serverUrl": "http://localhost:7432/mcp",
+      "headers": {
+        "Authorization": "Bearer YOUR_RAVMEM_TOKEN",
+        "X-KG-Team": "default",
+        "X-KG-Branch": "global"
+      }
+    }
+  }
+}

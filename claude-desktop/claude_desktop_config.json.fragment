@@ -1,0 +1,21 @@
+{
+  "mcpServers": {
+    "ravmem": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "mcp-remote",
+        "http://localhost:7432/mcp",
+        "--header",
+        "Authorization:${RAVMEM_AUTH}",
+        "--header",
+        "X-KG-Team:default",
+        "--header",
+        "X-KG-Branch:global"
+      ],
+      "env": {
+        "RAVMEM_AUTH": "Bearer YOUR_RAVMEM_TOKEN"
+      }
+    }
+  }
+}

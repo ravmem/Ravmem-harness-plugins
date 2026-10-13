@@ -1,0 +1,19 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "ravmem-integrations",
+  "description": "RavMem Context Engine integration plugins",
+  "owner": {
+    "name": "RavMem",
+    "email": "support@ravmem.com"
+  },
+  "plugins": [
+    {
+      "name": "ravmem",
+      "description": "Code-graph search, impact analysis, and persistent cross-session agent memory for this repo, backed by a self-hosted RavMem server.",
+      "author": {
+        "name": "RavMem"
+      },
+      "source": "./claude-code"
+    }
+  ]
+}
