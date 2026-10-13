@@ -44,7 +44,7 @@ def main() -> int:
 
     print(
         f"[RavMem] No project named '{Path(root).name}' is indexed on the server yet. To enable code search and "
-        "impact analysis, run `ravmem analyze . --wait` from the repo root (or ask for the ravmem-onboarding guidance)."
+        "impact analysis, run `ravmem remote add . --name <project>` then `ravmem analyze . --project <project> --wait` from the repo root (or ask for the ravmem-onboarding guidance)."
     )
     return 0
 
