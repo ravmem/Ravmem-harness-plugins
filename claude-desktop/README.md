@@ -10,3 +10,7 @@ Claude Desktop launches only local servers from `claude_desktop_config.json`, so
 (mode 600). A backup of the existing config is written first. Restart Claude Desktop afterwards.
 
 The `skills/` folder holds the same five skills as the Claude Code plugin, for use wherever your Claude Desktop setup loads skills.
+
+## Install the server
+
+Claude Desktop has no shell, so it cannot run the server installer for you. In a terminal run `python3 claude-desktop/scripts/setup_stack.py` (Docker required); it starts and activates the RavMem server and writes `~/.ravmem/client.json`, which `install_config.py` then reads.

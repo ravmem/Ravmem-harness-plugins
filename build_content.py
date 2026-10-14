@@ -10,7 +10,9 @@ here once and this script writes:
   antigravity/skills/*/SKILL.md      antigravity/rules/*.md
   cursor/rules/*.mdc                 codex/AGENTS.md(.fragment)
   antigravity/GEMINI.md(.fragment)
-  <harness>/scripts/{_ravmem_http,load_kg_context,prune_kg,check_onboarding}.py  (copied from core/scripts)
+  claude-code/commands/ravmem-setup.md   cursor/commands/ravmem-setup.md   antigravity/skills/ravmem-setup/SKILL.md
+  codex/prompts/ravmem-setup.md          (server install: runs scripts/setup_stack.py)
+  <harness>/scripts/*.py  (copied from core/scripts)
 
 Run:  python3 build_content.py          (rewrites the files)
       python3 build_content.py --check  (exit 1 if any file is out of date)
@@ -226,6 +228,65 @@ Do not run the CLI for the user unprompted — it uploads source code to the ser
 }
 
 
+SETUP_DESCRIPTION = "Install and activate the RavMem server (Docker Compose) on this machine and connect this tool to it"
+
+# How the user is told to run the installer, per harness. The license key is typed into a terminal, never into chat.
+SETUP_RUN = {
+    "claude-code": ('`! python3 "${CLAUDE_PLUGIN_ROOT}/scripts/setup_stack.py"`',
+                    "(the `!` prefix runs it in this session's terminal so the key is typed privately)"),
+    "cursor": ("`python3 .cursor/scripts/setup_stack.py`", "in Cursor's integrated terminal"),
+    "codex": ("`python3 ~/.codex/scripts/setup_stack.py`", "in a terminal (installed by `install_to_project.py --global`)"),
+    "antigravity": ("`python3 .agents/scripts/setup_stack.py`", "in a terminal"),
+}
+
+SETUP_BODY = """\
+Set up the RavMem server on this machine. The installer downloads the **latest** Docker Compose file from
+https://ravmem.com/docs/docker-compose.yml (never a bundled copy), starts the stack, activates the license and
+writes `~/.ravmem/client.json` so this tool and the RavMem CLI can connect.
+
+**The license key must never pass through this chat.** Do not ask the user to paste it and do not run the
+installer yourself: it needs a real terminal to read the key without echo.
+
+1. Check Docker is usable: `docker compose version` and `docker info`. If either fails, tell the user to install
+   or start Docker (https://docs.docker.com/get-docker/) and stop.
+2. Ask the user to run {run} {where}. They need their RavMem license key (it starts with `RAVMEM-`). Add `--port <n>`
+   or `--ui-port <n>` for non-default ports. In a shell without a terminal prompt they can export `RAVMEM_LICENSE_KEY`
+   first instead.
+3. Afterwards run the same script with `status` and report the result.
+4. The server URL and admin token are now in `~/.ravmem/client.json` (the token is also in `~/.ravmem/stack/.env`).
+   {finish}
+
+If the installer reports an error, show it as is and suggest the fix it names. Never run `docker compose down -v`
+(it deletes all RavMem data) and never print the admin token or license key.
+"""
+
+SETUP_FINISH = {
+    "claude-code": "Set this plugin's `server_url` and `token` options to them (or reinstall the plugin) and restart Claude Code.",
+    "cursor": "Run `python3 .cursor/scripts/install_to_project.py --force`, export `RAVMEM_TOKEN` with the admin token, and restart Cursor.",
+    "codex": "Run `python3 .codex/scripts/install_to_project.py` in the project, export `RAVMEM_TOKEN` with the admin token, and restart Codex.",
+    "antigravity": "Run `python3 .agents/scripts/install_to_project.py --global` (or put the token in `.agents/mcp_config.json`) and restart Antigravity.",
+}
+
+
+def setup_body(harness: str) -> str:
+    run, where = SETUP_RUN[harness]
+    return SETUP_BODY.format(run=run, where=where, finish=SETUP_FINISH[harness])
+
+
+def setup_claude_command() -> str:
+    return (f"---\ndescription: {SETUP_DESCRIPTION}\nallowed-tools: Bash(docker:*), Bash(python3:*)\n"
+            f"disable-model-invocation: true\n---\n\n{setup_body('claude-code')}")
+
+
+def setup_plain(harness: str) -> str:
+    return f"# Set up the RavMem server\n\n{setup_body(harness)}"
+
+
+def setup_antigravity_skill() -> str:
+    return (f"---\nname: ravmem-setup\ndescription: {SETUP_DESCRIPTION}. User-invoked only.\n"
+            f"disable-model-invocation: true\n---\n\n{setup_body('antigravity')}")
+
+
 def _tool_ids(tools: list[str]) -> str:
     return "[" + ", ".join(f'"{PREFIX}{t}"' for t in tools) + "]"
 
@@ -270,7 +331,7 @@ def _demote(body: str) -> str:
     return "\n".join(("#" + line) if line.startswith("###") else line for line in body.splitlines())
 
 
-def instructions_block(harness: str, config_key: str) -> str:
+def instructions_block(harness: str, config_key: str, setup_key: str) -> str:
     parts = [
         BEGIN,
         "## RavMem Context Engine Integration",
@@ -282,6 +343,16 @@ def instructions_block(harness: str, config_key: str) -> str:
     for i, name in enumerate(("ravmem-search", "ravmem-impact", "ravmem-memory", "ravmem-status", "ravmem-onboarding"), 1):
         t = TOPICS[name]
         parts += [f"### {i}. {t['title']}", "", _demote(t["body"]), ""]
+    run, where = SETUP_RUN[setup_key]
+    parts += [
+        "### 6. Installing the RavMem server",
+        "",
+        f"If the user wants the RavMem server itself installed and activated, do not do it for them: the license key "
+        f"must be typed privately. Tell them to run {run} {where}. It fetches the latest Docker Compose file from "
+        "https://ravmem.com/docs/docker-compose.yml, starts the stack and activates the license. Never ask for or "
+        "print the license key or admin token.",
+        "",
+    ]
     parts.append(END)
     return "\n".join(parts) + "\n"
 
@@ -302,12 +373,17 @@ def targets() -> dict[Path, str]:
         out[ROOT / "cursor" / "rules" / f"{name}.mdc"] = cursor_mdc(name, t)
         out[ROOT / "antigravity" / "rules" / f"{name}.md"] = antigravity_rule(name, t)
 
+    out[ROOT / "claude-code" / "commands" / "ravmem-setup.md"] = setup_claude_command()
+    out[ROOT / "cursor" / "commands" / "ravmem-setup.md"] = setup_plain("cursor")
+    out[ROOT / "codex" / "prompts" / "ravmem-setup.md"] = setup_plain("codex")
+    out[ROOT / "antigravity" / "skills" / "ravmem-setup" / "SKILL.md"] = setup_antigravity_skill()
+
     for src in sorted((ROOT / "core" / "scripts").glob("*.py")):
         for harness in ("claude-code", "claude-desktop", "antigravity", "cursor", "codex"):
             out[ROOT / harness / "scripts" / src.name] = src.read_text(encoding="utf-8")
 
-    codex_block = instructions_block("project", "mcp_servers")
-    ag_block = instructions_block("workspace", "mcpServers")
+    codex_block = instructions_block("project", "mcp_servers", "codex")
+    ag_block = instructions_block("workspace", "mcpServers", "antigravity")
     out[ROOT / "codex" / "AGENTS.md.fragment"] = codex_block
     out[ROOT / "antigravity" / "GEMINI.md.fragment"] = ag_block
     for path, block, header in (

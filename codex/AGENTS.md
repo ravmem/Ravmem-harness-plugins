@@ -154,5 +154,9 @@ local git repo and uploads its **committed** files; an MCP server cannot read yo
 
 Do not run the CLI for the user unprompted — it uploads source code to the server.
 
+### 6. Installing the RavMem server
+
+If the user wants the RavMem server itself installed and activated, do not do it for them: the license key must be typed privately. Tell them to run `python3 ~/.codex/scripts/setup_stack.py` in a terminal (installed by `install_to_project.py --global`). It fetches the latest Docker Compose file from https://ravmem.com/docs/docker-compose.yml, starts the stack and activates the license. Never ask for or print the license key or admin token.
+
 <!-- END RAVMEM INSTRUCTIONS -->
 

@@ -4,7 +4,7 @@
     python3 install_to_project.py [TARGET_DIR] [--server-url URL] [--force]
 
 Writes <target>/.cursor/mcp.json (the server's Streamable HTTP endpoint), copies the rules to
-<target>/.cursor/rules/ and the maintenance scripts to <target>/.cursor/scripts/. The token is NOT written to
+<target>/.cursor/rules/, the /ravmem-setup command to <target>/.cursor/commands/ and the maintenance scripts to <target>/.cursor/scripts/. The token is NOT written to
 the project: the config reads it from the RAVMEM_TOKEN environment variable, so mcp.json is safe to commit.
 """
 
@@ -22,8 +22,9 @@ sys.path.insert(0, str(CURSOR_DIR.parent / "core"))
 import connect  # noqa: E402
 
 RULES_DIR = CURSOR_DIR / "rules"
+COMMANDS_DIR = CURSOR_DIR / "commands"
 SCRIPTS_DIR = CURSOR_DIR / "scripts"
-SCRIPT_FILES = ("_ravmem_http.py", "load_kg_context.py", "prune_kg.py", "check_onboarding.py")
+SCRIPT_FILES = ("_ravmem_http.py", "load_kg_context.py", "prune_kg.py", "check_onboarding.py", "setup_stack.py")
 
 
 def main() -> int:
@@ -42,6 +43,7 @@ def main() -> int:
     cursor_dir = target / ".cursor"
     (cursor_dir / "rules").mkdir(parents=True, exist_ok=True)
     (cursor_dir / "scripts").mkdir(parents=True, exist_ok=True)
+    (cursor_dir / "commands").mkdir(parents=True, exist_ok=True)
 
     mcp_json = cursor_dir / "mcp.json"
     if mcp_json.exists() and not args.force:
@@ -60,6 +62,10 @@ def main() -> int:
         if args.force or not dest.exists():
             shutil.copy2(src, dest)
             copied += 1
+    for src in COMMANDS_DIR.glob("*.md"):
+        dest = cursor_dir / "commands" / src.name
+        if args.force or not dest.exists():
+            shutil.copy2(src, dest)
     for name in SCRIPT_FILES:
         dest = cursor_dir / "scripts" / name
         if args.force or not dest.exists():
