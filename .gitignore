@@ -1,0 +1,4 @@
+__pycache__/
+*.pyc
+.agents/mcp_config.json.bak
+*.json.bak

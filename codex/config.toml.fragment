@@ -1,0 +1,10 @@
+# RavMem MCP server for Codex CLI (Streamable HTTP).
+# Put in ~/.codex/config.toml (global) or <project>/.codex/config.toml.
+# Export your token first:  export RAVMEM_TOKEN=...
+[mcp_servers.ravmem]
+url = "http://localhost:7432/mcp"
+bearer_token_env_var = "RAVMEM_TOKEN"
+
+[mcp_servers.ravmem.http_headers]
+X-KG-Team = "default"
+X-KG-Branch = "global"
