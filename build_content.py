@@ -252,7 +252,8 @@ installer yourself: it needs a real terminal to read the key without echo.
 2. Ask the user to run {run} {where}. They need their RavMem license key (it starts with `RAVMEM-`). Add `--port <n>`
    or `--ui-port <n>` for non-default ports. In a shell without a terminal prompt they can export `RAVMEM_LICENSE_KEY`
    first instead.
-3. Afterwards run the same script with `status` and report the result.
+3. The installer also offers to install the RavMem CLI (`ravmem-cli`), which is needed to index a repository.
+   Afterwards run the same script with `status` and report the result.
 4. The server URL and admin token are now in `~/.ravmem/client.json` (the token is also in `~/.ravmem/stack/.env`).
    {finish}
 

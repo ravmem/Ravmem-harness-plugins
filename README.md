@@ -44,8 +44,9 @@ The server exposes 18 tools, 6 resource templates and 5 prompts (`GET <server>/a
 No server yet? `scripts/setup_stack.py` (shipped in every plugin, standard library only) installs and activates one
 with Docker. It downloads the **latest** Docker Compose file from `https://ravmem.com/docs/docker-compose.yml` on every
 run (nothing is bundled or reused), generates the admin token and database password into `~/.ravmem/stack/.env`,
-starts the stack, activates your license, and writes `~/.ravmem/client.json` so the other installers and the CLI find
-the server. You type the license key into the terminal (hidden) or export `RAVMEM_LICENSE_KEY`; it is never taken as
+starts the stack, activates your license, writes `~/.ravmem/client.json` so the other installers and the CLI find
+the server, and offers to install the RavMem CLI (`ravmem-cli`, needed to index repositories) with `pipx`, or
+`pip install --user` if pipx is missing. You type the license key into the terminal (hidden) or export `RAVMEM_LICENSE_KEY`; it is never taken as
 an argument, written to disk or printed.
 
 | Harness | How to run it |
@@ -59,7 +60,8 @@ an argument, written to disk or printed.
 It needs Docker with Compose v2 and a running daemon, Python 3.8+, and a RavMem license key. Re-running it is safe: it
 refreshes the compose file, keeps your secrets and data, and skips activation when the license is already active. Use
 `--port` / `--ui-port` to avoid busy ports, `--compose-url` (or `RAVMEM_COMPOSE_URL`) to test against another file, and
-`status` to check the stack. It refuses to run if containers named `ravmem`, `arcadedb` or `ravmem-ui` already exist
+`status` to check the stack. `--cli` installs the CLI without asking and `--no-cli` skips it (with no terminal to ask
+in, it is skipped unless you pass `--cli`); a failed CLI install is reported but never fails the server install. It refuses to run if containers named `ravmem`, `arcadedb` or `ravmem-ui` already exist
 from another stack. Tests: `python3 -m unittest tests.test_setup_stack`.
 
 ## Memory scope

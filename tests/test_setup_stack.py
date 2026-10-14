@@ -117,6 +117,48 @@ class SetupStackTest(unittest.TestCase):
     def docker_calls(self):
         return self.log.read_text().splitlines() if self.log.exists() else []
 
+    def run_cli(self, *extra, which=None, rc_cmd=0):
+        """Run main with ss.shutil.which / ss.run_cmd faked so nothing is really installed."""
+        calls, real_which = [], ss.shutil.which
+        ss.shutil.which = lambda n, *a, **k: (which or {}).get(n, real_which(n) if n == "docker" else None)
+        orig = ss.run_cmd
+        ss.run_cmd = lambda cmd: (calls.append(cmd), type("P", (), {"returncode": rc_cmd, "stdout": "boom"})())[1]
+        try:
+            res = self.run_main(*extra)
+        finally:
+            ss.shutil.which, ss.run_cmd = real_which, orig
+        return res, calls
+
+    def test_cli_skipped_without_terminal_by_default(self):
+        (rc, out, _), calls = self.run_cli()
+        self.assertEqual((rc, calls), (0, []))
+        self.assertIn("skipped (no terminal", out)
+
+    def test_cli_installed_with_pipx(self):
+        (rc, out, _), calls = self.run_cli("--cli", which={"pipx": "/x/pipx"})
+        self.assertEqual(calls, [["pipx", "install", "ravmem-cli"]])
+        self.assertIn("installed", out)
+
+    def test_cli_falls_back_to_pip_user(self):
+        (_, _, _), calls = self.run_cli("--cli")
+        self.assertEqual(calls[0][1:], ["-m", "pip", "install", "--user", "ravmem-cli"])
+
+    def test_cli_not_reinstalled_when_present(self):
+        (_, out, _), calls = self.run_cli("--cli", which={"ravmem": "/x/ravmem"})
+        self.assertEqual(calls, [])
+        self.assertIn("already installed", out)
+
+    def test_no_cli_flag(self):
+        (_, out, _), calls = self.run_cli("--no-cli")
+        self.assertEqual(calls, [])
+        self.assertIn("skipped (install later", out)
+
+    def test_cli_failure_is_not_fatal(self):
+        (rc, out, _), calls = self.run_cli("--cli", which={"pipx": "/x/pipx"}, rc_cmd=1)
+        self.assertEqual(rc, 0)
+        self.assertIn("failed", out)
+        self.assertTrue((self.stack / ".env").exists())
+
     def test_full_install(self):
         rc, out, err = self.run_main()
         self.assertEqual(rc, 0, err)
