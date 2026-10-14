@@ -24,7 +24,7 @@ sys.path.insert(0, str(AGY_DIR.parent / "core"))
 import connect  # noqa: E402
 
 BEGIN, END = "<!-- BEGIN RAVMEM INSTRUCTIONS -->", "<!-- END RAVMEM INSTRUCTIONS -->"
-SCRIPT_FILES = ("_ravmem_http.py", "load_kg_context.py", "prune_kg.py", "check_onboarding.py")
+SCRIPT_FILES = ("_ravmem_http.py", "load_kg_context.py", "prune_kg.py", "check_onboarding.py", "setup_stack.py")
 
 
 def _server_entry(url: str, token: str) -> dict:

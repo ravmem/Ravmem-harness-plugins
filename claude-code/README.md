@@ -27,6 +27,8 @@ Claude Code then asks for the plugin options:
   commands (`session_start`, `pre_edit_impact`, `onboard_repo`, `session_handoff`, `review_learnings`).
 - **Skills** — `ravmem-search`, `ravmem-impact`, `ravmem-memory`, `ravmem-status`, `ravmem-onboarding`
   (user-invoked only).
+- **Setup command** — `/ravmem:ravmem-setup` installs and activates the RavMem server with Docker (see the
+  repository README); the license key is typed in the terminal, never in chat.
 - **Hooks** — `check_onboarding.py` suggests `ravmem analyze` when the server has no project for the repo;
   `load_kg_context.py` lists open tasks. Both exit silently if the server is unreachable.
 - **Maintenance** — `python3 scripts/prune_kg.py --dry-run` deactivates resolved blockers, old context notes and

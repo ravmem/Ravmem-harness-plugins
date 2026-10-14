@@ -36,6 +36,12 @@ Requires a RavMem server with the MCP revamp (the `/mcp` endpoint with 18 tools,
 - Installers for Cursor, Codex, Antigravity and Claude Desktop that discover the server and token from flags,
   `RAVMEM_SERVER_URL` / `RAVMEM_TOKEN`, then `~/.ravmem/client.json`, and check that the server answers.
 - Cursor install link generator that carries no secret by default.
+- **Server installer** (`scripts/setup_stack.py`, in every plugin): installs and activates the RavMem server with
+  Docker Compose. It fetches the latest compose file from `https://ravmem.com/docs/docker-compose.yml` on every run,
+  generates secrets into `~/.ravmem/stack/.env`, activates the license from a hidden terminal prompt (or
+  `RAVMEM_LICENSE_KEY`; never an argument), and writes `~/.ravmem/client.json`. Safe to re-run. Exposed as
+  `/ravmem:ravmem-setup` (Claude Code), a Cursor command, a Codex prompt (`install_to_project.py --global`) and an
+  Antigravity skill.
 
 ### Changed
 

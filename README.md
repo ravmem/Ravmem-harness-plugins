@@ -39,6 +39,29 @@ The server exposes 18 tools, 6 resource templates and 5 prompts (`GET <server>/a
   An MCP server cannot read your disk, so the first upload is a CLI step; afterwards `project_sync` keeps
   server-cloned projects fresh and `ravmem analyze . --project <project> --incremental` updates uploaded ones.
 
+## Installing the server
+
+No server yet? `scripts/setup_stack.py` (shipped in every plugin, standard library only) installs and activates one
+with Docker. It downloads the **latest** Docker Compose file from `https://ravmem.com/docs/docker-compose.yml` on every
+run (nothing is bundled or reused), generates the admin token and database password into `~/.ravmem/stack/.env`,
+starts the stack, activates your license, and writes `~/.ravmem/client.json` so the other installers and the CLI find
+the server. You type the license key into the terminal (hidden) or export `RAVMEM_LICENSE_KEY`; it is never taken as
+an argument, written to disk or printed.
+
+| Harness | How to run it |
+|---|---|
+| Claude Code | `/ravmem:ravmem-setup`, then type `! python3 "${CLAUDE_PLUGIN_ROOT}/scripts/setup_stack.py"` when it asks |
+| Cursor | `/ravmem-setup` command, or `python3 .cursor/scripts/setup_stack.py` |
+| Codex CLI | `/prompts:ravmem-setup` (after `install_to_project.py --global`), or `python3 ~/.codex/scripts/setup_stack.py` |
+| Antigravity | the `ravmem-setup` skill, or `python3 .agents/scripts/setup_stack.py` |
+| Claude Desktop | no shell access: run `python3 claude-desktop/scripts/setup_stack.py` yourself in a terminal |
+
+It needs Docker with Compose v2 and a running daemon, Python 3.8+, and a RavMem license key. Re-running it is safe: it
+refreshes the compose file, keeps your secrets and data, and skips activation when the license is already active. Use
+`--port` / `--ui-port` to avoid busy ports, `--compose-url` (or `RAVMEM_COMPOSE_URL`) to test against another file, and
+`status` to check the stack. It refuses to run if containers named `ravmem`, `arcadedb` or `ravmem-ui` already exist
+from another stack. Tests: `python3 -m unittest tests.test_setup_stack`.
+
 ## Memory scope
 
 Memory is shared per team and knowledge branch. Each config sends `X-KG-Team` (default `default`) and

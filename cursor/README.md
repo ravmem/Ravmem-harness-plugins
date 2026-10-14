@@ -11,3 +11,7 @@ from `--server-url`, `RAVMEM_SERVER_URL` / `RAVMEM_TOKEN`, then `~/.ravmem/clien
 
 One-click alternative: `python3 cursor/scripts/generate_deeplink.py` prints a `cursor://` install link that also
 reads the token from `RAVMEM_TOKEN`.
+
+## Install the server
+
+`/ravmem-setup` (in `.cursor/commands/`) installs and activates the RavMem server with Docker; run `python3 .cursor/scripts/setup_stack.py` in the integrated terminal so the license key is typed privately. See the repository README, "Installing the server".
