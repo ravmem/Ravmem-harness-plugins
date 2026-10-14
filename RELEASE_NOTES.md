@@ -39,7 +39,8 @@ Requires a RavMem server with the MCP revamp (the `/mcp` endpoint with 18 tools,
 - **Server installer** (`scripts/setup_stack.py`, in every plugin): installs and activates the RavMem server with
   Docker Compose. It fetches the latest compose file from `https://ravmem.com/docs/docker-compose.yml` on every run,
   generates secrets into `~/.ravmem/stack/.env`, activates the license from a hidden terminal prompt (or
-  `RAVMEM_LICENSE_KEY`; never an argument), and writes `~/.ravmem/client.json`. Safe to re-run. Exposed as
+  `RAVMEM_LICENSE_KEY`; never an argument), writes `~/.ravmem/client.json`, and offers to install `ravmem-cli`
+  (`--cli` / `--no-cli`). Safe to re-run. Exposed as
   `/ravmem:ravmem-setup` (Claude Code), a Cursor command, a Codex prompt (`install_to_project.py --global`) and an
   Antigravity skill.
 

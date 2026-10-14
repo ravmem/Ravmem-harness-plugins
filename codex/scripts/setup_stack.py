@@ -3,7 +3,7 @@
 
 Steps: check Docker, fetch the *latest* compose file from the RavMem docs (never a bundled copy),
 create secrets in a private .env, pull images, start the stack, wait for it to be healthy, activate the
-license, and write ~/.ravmem/client.json so every RavMem plugin and the CLI can connect.
+license, write ~/.ravmem/client.json so every RavMem plugin and the CLI can connect, and optionally install ravmem-cli.
 
 The license key is typed into the terminal (hidden) or read from RAVMEM_LICENSE_KEY. It is never taken
 from the command line, so it does not end up in shell history, process lists or a chat transcript.
@@ -283,13 +283,42 @@ def write_client_json(server_url: str, token: str, assume_yes: bool) -> str:
     return "written"
 
 
+# --- CLI -------------------------------------------------------------------------------------------
+
+CLI_PACKAGE = "ravmem-cli"
+
+
+def run_cmd(cmd: list[str]) -> subprocess.CompletedProcess:
+    return subprocess.run(cmd, text=True, check=False, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+
+
+def install_cli(mode: str) -> str:
+    """Install ravmem-cli (needed to index repositories). mode: ask | yes | no. Never fatal."""
+    if shutil.which("ravmem"):
+        return "already installed"
+    if mode == "no":
+        return f"skipped (install later with: pipx install {CLI_PACKAGE})"
+    if mode == "ask":
+        if not (sys.stdin.isatty() and sys.stdout.isatty()):
+            return f"skipped (no terminal to ask; re-run with --cli or: pipx install {CLI_PACKAGE})"
+        if input(f"Install the RavMem CLI ({CLI_PACKAGE}) so you can index repositories? [Y/n] ").strip().lower() not in ("", "y", "yes"):
+            return "skipped"
+    cmd = ["pipx", "install", CLI_PACKAGE] if shutil.which("pipx") else [sys.executable, "-m", "pip", "install", "--user", CLI_PACKAGE]
+    proc = run_cmd(cmd)
+    if proc.returncode != 0:
+        tail = " | ".join((proc.stdout or "").strip().splitlines()[-2:])
+        return f"failed ({tail}). Install it yourself: pipx install {CLI_PACKAGE}"
+    note = "" if shutil.which("ravmem") else " (open a new terminal if `ravmem` is not found: its folder may not be on PATH yet)"
+    return "installed" + note
+
+
 # --- main ------------------------------------------------------------------------------------------
 
 def install(args: argparse.Namespace) -> int:
     directory = Path(args.dir).expanduser()
     compose_path, env_path = directory / "docker-compose.yml", directory / ".env"
 
-    say("1/6 Checking Docker")
+    say("1/7 Checking Docker")
     check_docker()
     clash = foreign_container(directory)
     if clash:
@@ -297,7 +326,7 @@ def install(args: argparse.Namespace) -> int:
                          "Stop or remove it (or use --dir pointing at its compose directory) and try again.")
 
     url = args.compose_url or os.environ.get(COMPOSE_URL_ENV) or COMPOSE_URL
-    say(f"2/6 Fetching the latest compose file\n  {url}")
+    say(f"2/7 Fetching the latest compose file\n  {url}")
     compose = fetch_compose(url, args.insecure)
     directory.mkdir(parents=True, exist_ok=True)
     compose_path.write_text(compose, encoding="utf-8")  # overwritten on every run: nothing is reused from a previous download
@@ -308,16 +337,16 @@ def install(args: argparse.Namespace) -> int:
     env = ensure_env(env_path, args.port, args.ui_port, running)
     port, ui_port = env["RAVMEM_PORT"], env["RAVMEM_UI_PORT"]
     base = f"http://localhost:{port}"
-    say(f"3/6 Starting the stack in {directory}\n  server :{port}   dashboard :{ui_port}")
+    say(f"3/7 Starting the stack in {directory}\n  server :{port}   dashboard :{ui_port}")
     compose_cmd = ["compose", "-p", PROJECT, "--env-file", str(env_path), "-f", str(compose_path)]
     docker(*compose_cmd, "pull", cwd=directory)
     docker(*compose_cmd, "up", "-d", cwd=directory)
 
-    say("4/6 Waiting for the server")
+    say("4/7 Waiting for the server")
     wait_for(lambda: healthy(base), args.wait, "the server to answer /health")
     token = env["RAVMEM_ADMIN_TOKEN"]
 
-    say("5/6 License")
+    say("5/7 License")
     code, status = call(base, "GET", "/api/license/status", token)
     if code == 200 and status.get("status") in ("ACTIVE", "GRACE_PERIOD") and status.get("token_integrity", "ok") == "ok":
         say(f"  already active ({status.get('status')}), nothing to do")
@@ -325,11 +354,14 @@ def install(args: argparse.Namespace) -> int:
         result = activate_license(base, token, read_license_key(), args.wait)
         say(f"  activated: {result.get('status')}  expires {result.get('expiry_ts')}")
 
-    say("6/6 Connecting plugins and CLI")
+    say("6/7 Connecting plugins")
     say(f"  {CLIENT_JSON}: {write_client_json(base, token, args.yes)}")
+    say("7/7 RavMem CLI")
+    say(f"  {install_cli('yes' if args.cli else 'no' if args.no_cli else 'ask')}")
     say("")
     say(f"RavMem is running.\n  API / MCP : {base}   (MCP at {base}/mcp)\n  Dashboard : http://localhost:{ui_port}\n"
         f"  Admin token is stored in {env_path} (and {CLIENT_JSON}); it is not printed here.\n"
+        f"  Index a repo (from its root):  ravmem remote add . --name <project>  then  ravmem analyze . --project <project> --wait\n"
         f"  Stop: docker compose -p {PROJECT} -f {compose_path} down      (add -v only to delete all data)")
     return 0
 
@@ -360,6 +392,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--port", type=int, help=f"host port for the server (default {DEFAULT_PORT}, or the next free one)")
     parser.add_argument("--ui-port", type=int, help=f"host port for the dashboard (default {DEFAULT_UI_PORT}, or the next free one)")
     parser.add_argument("--wait", type=int, default=240, help="seconds to wait for the server (default 240)")
+    parser.add_argument("--cli", action="store_true", help="install ravmem-cli without asking")
+    parser.add_argument("--no-cli", action="store_true", help="do not install ravmem-cli")
     parser.add_argument("--yes", "-y", action="store_true", help="replace an existing ~/.ravmem/client.json without asking")
     args = parser.parse_args(argv)
     try:
