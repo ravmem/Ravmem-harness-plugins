@@ -41,28 +41,31 @@ The server exposes 18 tools, 6 resource templates and 5 prompts (`GET <server>/a
 
 ## Installing the server
 
-No server yet? `scripts/setup_stack.py` (shipped in every plugin, standard library only) installs and activates one
-with Docker. It downloads the **latest** Docker Compose file from `https://ravmem.com/docs/docker-compose.yml` on every
-run (nothing is bundled or reused), generates the admin token and database password into `~/.ravmem/stack/.env`,
-starts the stack, activates your license, writes `~/.ravmem/client.json` so the other installers and the CLI find
-the server, and offers to install the RavMem CLI (`ravmem-cli`, needed to index repositories) with `pipx`, or
-`pip install --user` if pipx is missing. You type the license key into the terminal (hidden) or export `RAVMEM_LICENSE_KEY`; it is never taken as
-an argument, written to disk or printed.
+No server yet? Run the setup command from your tool; it walks you through a standard Docker Compose install and never
+touches your secrets. Installing the plugin asks for no options.
 
-| Harness | How to run it |
-|---|---|
-| Claude Code | `/ravmem:ravmem-setup`, then type `! python3 "${CLAUDE_PLUGIN_ROOT}/scripts/setup_stack.py"` when it asks |
-| Cursor | `/ravmem-setup` command, or `python3 .cursor/scripts/setup_stack.py` |
-| Codex CLI | `/prompts:ravmem-setup` (after `install_to_project.py --global`), or `python3 ~/.codex/scripts/setup_stack.py` |
-| Antigravity | the `ravmem-setup` skill, or `python3 .agents/scripts/setup_stack.py` |
-| Claude Desktop | no shell access: run `python3 claude-desktop/scripts/setup_stack.py` yourself in a terminal |
+| Harness | Install the server | Connect to it afterwards |
+|---|---|---|
+| Claude Code | `/ravmem:ravmem-setup` | `/ravmem:ravmem-configure` |
+| Cursor | `/ravmem-setup` | `/ravmem-configure` |
+| Codex CLI | `/prompts:ravmem-setup` (after `install_to_project.py --global`) | `/prompts:ravmem-configure` |
+| Antigravity | the `ravmem-setup` skill | the `ravmem-configure` skill |
+| Claude Desktop | follow the steps below by hand | edit `claude_desktop_config.json` (see its README) |
 
-It needs Docker with Compose v2 and a running daemon, Python 3.8+, and a RavMem license key. Re-running it is safe: it
-refreshes the compose file, keeps your secrets and data, and skips activation when the license is already active. Use
-`--port` / `--ui-port` to avoid busy ports, `--compose-url` (or `RAVMEM_COMPOSE_URL`) to test against another file, and
-`status` to check the stack. `--cli` installs the CLI without asking and `--no-cli` skips it (with no terminal to ask
-in, it is skipped unless you pass `--cli`); a failed CLI install is reported but never fails the server install. It refuses to run if containers named `ravmem`, `arcadedb` or `ravmem-ui` already exist
-from another stack. Tests: `python3 -m unittest tests.test_setup_stack`.
+What the setup flow does:
+
+1. Asks whether you already have a server or want a new install, and whether you or your assistant should do the work
+   and in which folder.
+2. Downloads the **latest** compose file from `https://ravmem.com/docs/docker-compose.yml` (never a bundled copy) and
+   writes a sample `.env` with `CHANGE_ME` placeholders for the database password and the admin token. You fill those in
+   yourself; the assistant never reads the file.
+3. Starts the stack with `docker compose up -d` (or prints the command if you prefer to run it).
+4. You activate the license in your own terminal with the RavMem CLI: `pip install ravmem-cli`,
+   `ravmem remote config --url <url>`, `ravmem remote config --api-key <admin token>`, `ravmem license activate`.
+   Your license key is typed there and is never written to `.env`.
+5. `ravmem-configure` then sets the plugin's server URL (default `http://localhost:7432`) and admin token.
+
+It needs Docker with Compose v2 and a RavMem license key.
 
 ## Memory scope
 

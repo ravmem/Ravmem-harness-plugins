@@ -14,4 +14,4 @@ reads the token from `RAVMEM_TOKEN`.
 
 ## Install the server
 
-`/ravmem-setup` (in `.cursor/commands/`) installs and activates the RavMem server with Docker; run `python3 .cursor/scripts/setup_stack.py` in the integrated terminal so the license key is typed privately. See the repository README, "Installing the server".
+`/ravmem-setup` (in `.cursor/commands/`) guides you through writing the compose file and a sample `.env`, starting the stack and activating the license with the RavMem CLI. Afterwards `/ravmem-configure` connects Cursor to it. See the repository README, "Installing the server".

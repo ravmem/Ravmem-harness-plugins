@@ -10,8 +10,8 @@ here once and this script writes:
   antigravity/skills/*/SKILL.md      antigravity/rules/*.md
   cursor/rules/*.mdc                 codex/AGENTS.md(.fragment)
   antigravity/GEMINI.md(.fragment)
-  claude-code/commands/ravmem-setup.md   cursor/commands/ravmem-setup.md   antigravity/skills/ravmem-setup/SKILL.md
-  codex/prompts/ravmem-setup.md          (server install: runs scripts/setup_stack.py)
+  claude-code/commands/*.md   cursor/commands/*.md   codex/prompts/*.md   antigravity/skills/ravmem-{setup,configure}/
+  <harness> ravmem-setup / ravmem-configure commands, prompts and skills (guided server install and connect)
   <harness>/scripts/*.py  (copied from core/scripts)
 
 Run:  python3 build_content.py          (rewrites the files)
@@ -228,64 +228,138 @@ Do not run the CLI for the user unprompted — it uploads source code to the ser
 }
 
 
-SETUP_DESCRIPTION = "Install and activate the RavMem server (Docker Compose) on this machine and connect this tool to it"
+ENV_SAMPLE = """\
+# RavMem stack settings, read by docker-compose.yml. Do not commit this file.
+# Replace each placeholder value below yourself; nothing here is generated for you.
 
-# How the user is told to run the installer, per harness. The license key is typed into a terminal, never into chat.
-SETUP_RUN = {
-    "claude-code": ('`! python3 "${CLAUDE_PLUGIN_ROOT}/scripts/setup_stack.py"`',
-                    "(the `!` prefix runs it in this session's terminal so the key is typed privately)"),
-    "cursor": ("`python3 .cursor/scripts/setup_stack.py`", "in Cursor's integrated terminal"),
-    "codex": ("`python3 ~/.codex/scripts/setup_stack.py`", "in a terminal (installed by `install_to_project.py --global`)"),
-    "antigravity": ("`python3 .agents/scripts/setup_stack.py`", "in a terminal"),
-}
+# Password for the ArcadeDB graph database. Use a long random string.
+ARCADEDB_PASSWORD=CHANGE_ME
 
-SETUP_BODY = """\
-Set up the RavMem server on this machine. The installer downloads the **latest** Docker Compose file from
-https://ravmem.com/docs/docker-compose.yml (never a bundled copy), starts the stack, activates the license and
-writes `~/.ravmem/client.json` so this tool and the RavMem CLI can connect.
+# Admin token for the RavMem server. Choose your own value, e.g. rv_admin_<random>.
+# You will give the same value to the RavMem CLI and to the plugin.
+RAVMEM_ADMIN_TOKEN=CHANGE_ME
 
-**The license key must never pass through this chat.** Do not ask the user to paste it and do not run the
-installer yourself: it needs a real terminal to read the key without echo.
+# Optional: change if these ports are taken on your machine.
+RAVMEM_PORT=7432
+RAVMEM_UI_PORT=3000
 
-1. Check Docker is usable: `docker compose version` and `docker info`. If either fails, tell the user to install
-   or start Docker (https://docs.docker.com/get-docker/) and stop.
-2. Ask the user to run {run} {where}. They need their RavMem license key (it starts with `RAVMEM-`). Add `--port <n>`
-   or `--ui-port <n>` for non-default ports. In a shell without a terminal prompt they can export `RAVMEM_LICENSE_KEY`
-   first instead.
-3. The installer also offers to install the RavMem CLI (`ravmem-cli`), which is needed to index a repository.
-   Afterwards run the same script with `status` and report the result.
-4. The server URL and admin token are now in `~/.ravmem/client.json` (the token is also in `~/.ravmem/stack/.env`).
-   {finish}
-
-If the installer reports an error, show it as is and suggest the fix it names. Never run `docker compose down -v`
-(it deletes all RavMem data) and never print the admin token or license key.
+# License server used by `ravmem license activate`. Leave as is unless support told you otherwise.
+# Your license KEY does not go in this file: you type it when running `ravmem license activate`.
+RAVMEM_LICENSE_SERVER_URL=https://console.ravmem.com
 """
 
-SETUP_FINISH = {
-    "claude-code": "Set this plugin's `server_url` and `token` options to them (or reinstall the plugin) and restart Claude Code.",
-    "cursor": "Run `python3 .cursor/scripts/install_to_project.py --force`, export `RAVMEM_TOKEN` with the admin token, and restart Cursor.",
-    "codex": "Run `python3 .codex/scripts/install_to_project.py` in the project, export `RAVMEM_TOKEN` with the admin token, and restart Codex.",
-    "antigravity": "Run `python3 .agents/scripts/install_to_project.py --global` (or put the token in `.agents/mcp_config.json`) and restart Antigravity.",
+COMPOSE_URL = "https://ravmem.com/docs/docker-compose.yml"
+ENV_URL = "https://ravmem.com/docs/env.example"
+
+SETUP_DESCRIPTION = "Set up RavMem: write the Docker Compose stack and a sample .env, start it, and activate the license with the RavMem CLI"
+CONFIGURE_DESCRIPTION = "Point this tool at your RavMem server: set the server URL and the admin token"
+
+SETUP_BODY = """\
+Help the user get a RavMem server running. Go through these steps in order, one at a time, and ask before each
+action that changes something.
+
+**Secrets stay with the user.** Never ask the user to paste a license key, admin token or password into the chat,
+never read or print the `.env` file once it exists, and never run `docker compose down -v` (it deletes all data).
+
+1. **New or existing?** Ask: "Do you already have a RavMem server running, or do you want a new install?"
+   If it is already running, skip to step 6.
+2. **Docker.** Run `docker compose version` and `docker info`. If either fails, tell the user to install or start
+   Docker (https://docs.docker.com/get-docker/) and stop.
+3. **Who does it, and where?** Ask whether they want you to set it up for them, or to do it themselves while you
+   write the files and print the commands. Ask which folder to use (default: the current directory; create any
+   other path they give). If `docker-compose.yml` or `.env` already exists there, ask before touching it.
+4. **Write the files.**
+   - Compose file, always downloaded fresh, never from memory or an older copy:
+     `curl -fsSL -H "Cache-Control: no-cache" -o <folder>/docker-compose.yml {compose_url}`
+     If the download fails, stop and say so. Show the user the images it uses (`grep image: <folder>/docker-compose.yml`).
+   - Sample env file, only if there is no `.env` yet: `curl -fsSL -o <folder>/.env {env_url}` then `chmod 600 <folder>/.env`.
+     If that URL returns 404, write this text to `<folder>/.env` instead:
+
+```
+{env_sample}```
+
+   - Tell the user to open `<folder>/.env` themselves and replace each `CHANGE_ME` (database password, an admin
+     token of their choice, and the ports if they changed them). Wait until they say it is done, then check
+     with `grep -c '=CHANGE_ME' <folder>/.env` (it prints only a count). It must be 0. Remind them to keep the admin
+     token: they need it in steps 6 and 7.
+5. **Start the stack.** First check for clashes: `docker ps -a --format '{{{{.Names}}}}'` must not list `ravmem`, `arcadedb`
+   or `ravmem-ui`, and the ports in `.env` must be free.
+   - If you do it for them: `docker compose --project-directory <folder> up -d`, then wait for
+     `curl -s http://localhost:<port>/health` to answer (the first start pulls images and can take a few minutes).
+   - If they do it: print `cd <folder> && docker compose up -d` and wait for them to confirm.
+6. **Activate the license** (the user does this in a normal terminal; the key and token are typed there and
+   never shown to you). The RavMem CLI is the supported way to activate:
+   ```
+   pip install ravmem-cli            # or: pipx install ravmem-cli, skip if `ravmem --version` works
+   ravmem remote config --url http://localhost:<port>
+   ravmem remote config --api-key <the admin token you put in .env>
+   ravmem license activate           # prompts for the license key (hidden)
+   ravmem license status             # should show ACTIVE
+   ```
+   Use their real port if it is not 7432. If they have not got a license key yet, point them to the RavMem console.
+7. **Connect this tool.** Tell the user to run {configure_cmd} to set the server URL and admin token, then
+   restart {tool}.
+"""
+
+CONFIGURE_BODY = """\
+Connect {tool} to the RavMem server the user has running. You never see the admin token: the user enters it.
+
+1. Ask for the server URL, or use the default `http://localhost:7432`. Check it is up with
+   `curl -s <url>/health`; if that fails, tell them to finish `{setup_cmd}` first.
+2. {how}
+3. Restart {tool}, then verify: {verify}
+4. If the connection is refused with 401, the token does not match `RAVMEM_ADMIN_TOKEN` in their `.env`;
+   they should re-enter it. Do not read the `.env` for them.
+"""
+
+CONFIGURE_HOW = {
+    "claude-code": "Ask the user to open `/plugin`, select **ravmem**, and edit its options: **server_url** (only if it is not "
+                   "the default) and **token** (the admin token they chose in `.env`). The token field is hidden and stored "
+                   "securely; do not ask them to type it into the chat.",
+    "cursor": "If the URL is not the default, run `python3 .cursor/scripts/install_to_project.py --server-url <url> --force` "
+              "to rewrite `.cursor/mcp.json`. The token is read from the `RAVMEM_TOKEN` environment variable: ask the user to set it "
+              "to their admin token in the shell or profile that launches Cursor.",
+    "codex": "If the URL is not the default, ask the user to edit `url` under `[mcp_servers.ravmem]` in `~/.codex/config.toml` "
+             "(or the project's `.codex/config.toml`). The token is read from the `RAVMEM_TOKEN` environment variable: ask the user "
+             "to export it with their admin token before starting Codex.",
+    "antigravity": "Ask the user to open `.agents/mcp_config.json` (or `~/.gemini/config/mcp_config.json`) and set the URL "
+                   "(`<url>/mcp`) and replace `YOUR_RAVMEM_TOKEN` with their admin token themselves. Keep that file out of git.",
+}
+
+HARNESS = {
+    "claude-code": {"tool": "Claude Code", "setup": "`/ravmem:ravmem-setup`", "configure": "`/ravmem:ravmem-configure`",
+                    "verify": "ask the user to run `/mcp` (ravmem should be connected with 18 tools), then call the `projects_list` tool yourself."},
+    "cursor": {"tool": "Cursor", "setup": "`/ravmem-setup`", "configure": "`/ravmem-configure`",
+               "verify": "call the `projects_list` tool yourself and report whether it answers."},
+    "codex": {"tool": "Codex", "setup": "`/prompts:ravmem-setup`", "configure": "`/prompts:ravmem-configure`",
+              "verify": "call the `projects_list` tool yourself and report whether it answers."},
+    "antigravity": {"tool": "Antigravity", "setup": "the `ravmem-setup` skill", "configure": "the `ravmem-configure` skill",
+                    "verify": "call the `projects_list` tool yourself and report whether it answers."},
 }
 
 
 def setup_body(harness: str) -> str:
-    run, where = SETUP_RUN[harness]
-    return SETUP_BODY.format(run=run, where=where, finish=SETUP_FINISH[harness])
+    h = HARNESS[harness]
+    return SETUP_BODY.format(compose_url=COMPOSE_URL, env_url=ENV_URL, env_sample=ENV_SAMPLE,
+                             configure_cmd=h["configure"], tool=h["tool"])
 
 
-def setup_claude_command() -> str:
-    return (f"---\ndescription: {SETUP_DESCRIPTION}\nallowed-tools: Bash(docker:*), Bash(python3:*)\n"
-            f"disable-model-invocation: true\n---\n\n{setup_body('claude-code')}")
+def configure_body(harness: str) -> str:
+    h = HARNESS[harness]
+    return CONFIGURE_BODY.format(tool=h["tool"], setup_cmd=h["setup"].strip("`"), how=CONFIGURE_HOW[harness], verify=h["verify"])
 
 
-def setup_plain(harness: str) -> str:
-    return f"# Set up the RavMem server\n\n{setup_body(harness)}"
+def _command(description: str, body: str, tools: str = "") -> str:
+    extra = f"allowed-tools: {tools}\n" if tools else ""
+    return f"---\ndescription: {description}\n{extra}disable-model-invocation: true\n---\n\n{body}"
 
 
-def setup_antigravity_skill() -> str:
-    return (f"---\nname: ravmem-setup\ndescription: {SETUP_DESCRIPTION}. User-invoked only.\n"
-            f"disable-model-invocation: true\n---\n\n{setup_body('antigravity')}")
+def _plain(title: str, body: str) -> str:
+    return f"# {title}\n\n{body}"
+
+
+def _skill(name: str, description: str, body: str) -> str:
+    return f"---\nname: {name}\ndescription: {description}. User-invoked only.\ndisable-model-invocation: true\n---\n\n{body}"
 
 
 def _tool_ids(tools: list[str]) -> str:
@@ -344,14 +418,14 @@ def instructions_block(harness: str, config_key: str, setup_key: str) -> str:
     for i, name in enumerate(("ravmem-search", "ravmem-impact", "ravmem-memory", "ravmem-status", "ravmem-onboarding"), 1):
         t = TOPICS[name]
         parts += [f"### {i}. {t['title']}", "", _demote(t["body"]), ""]
-    run, where = SETUP_RUN[setup_key]
+    h = HARNESS[setup_key]
     parts += [
-        "### 6. Installing the RavMem server",
+        "### 6. Installing and connecting the RavMem server",
         "",
-        f"If the user wants the RavMem server itself installed and activated, do not do it for them: the license key "
-        f"must be typed privately. Tell them to run {run} {where}. It fetches the latest Docker Compose file from "
-        "https://ravmem.com/docs/docker-compose.yml, starts the stack and activates the license. Never ask for or "
-        "print the license key or admin token.",
+        f"If the user wants a RavMem server installed, follow {h['setup']}: write the Docker Compose file (downloaded fresh from "
+        f"{COMPOSE_URL}) and a sample `.env`, start the stack, and have the user activate the license with `ravmem license "
+        "activate` in their own terminal. Never ask for, read or print the license key, admin token or `.env`. "
+        f"To connect {h['tool']} to a running server, follow {h['configure']}.",
         "",
     ]
     parts.append(END)
@@ -374,10 +448,13 @@ def targets() -> dict[Path, str]:
         out[ROOT / "cursor" / "rules" / f"{name}.mdc"] = cursor_mdc(name, t)
         out[ROOT / "antigravity" / "rules" / f"{name}.md"] = antigravity_rule(name, t)
 
-    out[ROOT / "claude-code" / "commands" / "ravmem-setup.md"] = setup_claude_command()
-    out[ROOT / "cursor" / "commands" / "ravmem-setup.md"] = setup_plain("cursor")
-    out[ROOT / "codex" / "prompts" / "ravmem-setup.md"] = setup_plain("codex")
-    out[ROOT / "antigravity" / "skills" / "ravmem-setup" / "SKILL.md"] = setup_antigravity_skill()
+    for name, desc, body_fn, tools in (("ravmem-setup", SETUP_DESCRIPTION, setup_body, "Bash(docker:*), Bash(curl:*), Bash(chmod:*), Bash(grep:*)"),
+                                       ("ravmem-configure", CONFIGURE_DESCRIPTION, configure_body, "Bash(curl:*)")):
+        title = "Set up the RavMem server" if name == "ravmem-setup" else "Connect to your RavMem server"
+        out[ROOT / "claude-code" / "commands" / f"{name}.md"] = _command(desc, body_fn("claude-code"), tools)
+        out[ROOT / "cursor" / "commands" / f"{name}.md"] = _plain(title, body_fn("cursor"))
+        out[ROOT / "codex" / "prompts" / f"{name}.md"] = _plain(title, body_fn("codex"))
+        out[ROOT / "antigravity" / "skills" / name / "SKILL.md"] = _skill(name, desc, body_fn("antigravity"))
 
     for src in sorted((ROOT / "core" / "scripts").glob("*.py")):
         for harness in ("claude-code", "claude-desktop", "antigravity", "cursor", "codex"):

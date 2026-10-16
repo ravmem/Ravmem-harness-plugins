@@ -12,4 +12,4 @@ token into your private user config (mode 600).
 
 ## Install the server
 
-The `ravmem-setup` skill (user-invoked) installs and activates the RavMem server with Docker; run `python3 .agents/scripts/setup_stack.py` in a terminal so the license key is typed privately. See the repository README, "Installing the server".
+The user-invoked `ravmem-setup` skill guides you through writing the compose file and a sample `.env`, starting the stack and activating the license with the RavMem CLI; `ravmem-configure` then connects Antigravity to it. See the repository README, "Installing the server".
