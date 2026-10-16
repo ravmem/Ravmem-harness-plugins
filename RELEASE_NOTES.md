@@ -42,7 +42,8 @@ Requires a RavMem server with the MCP revamp (the `/mcp` endpoint with 18 tools,
   fill in yourself), start the stack, and have you activate the license with `ravmem license activate` in your own
   terminal. The assistant never reads the `.env` and never sees the license key or admin token.
   `/ravmem:ravmem-configure` (and equivalents) then connect the tool to the server.
-- Installing the Claude Code plugin no longer asks for `server_url` or `token`; set them afterwards.
+- Installing the Claude Code plugin no longer requires `server_url` or `token`: leave them blank on the options screen and set
+  them afterwards with `/ravmem:ravmem-configure` (the option descriptions say so).
 
 ### Changed
 

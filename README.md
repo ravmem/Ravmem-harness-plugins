@@ -42,7 +42,8 @@ The server exposes 18 tools, 6 resource templates and 5 prompts (`GET <server>/a
 ## Installing the server
 
 No server yet? Run the setup command from your tool; it walks you through a standard Docker Compose install and never
-touches your secrets. Installing the plugin asks for no options.
+touches your secrets. Installing the Claude Code plugin shows an options screen where nothing is required: leave it blank and save,
+then set the server URL and token afterwards with the configure command.
 
 | Harness | Install the server | Connect to it afterwards |
 |---|---|---|
