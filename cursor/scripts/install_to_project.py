@@ -24,7 +24,7 @@ import connect  # noqa: E402
 RULES_DIR = CURSOR_DIR / "rules"
 COMMANDS_DIR = CURSOR_DIR / "commands"
 SCRIPTS_DIR = CURSOR_DIR / "scripts"
-SCRIPT_FILES = ("_ravmem_http.py", "load_kg_context.py", "prune_kg.py", "check_onboarding.py", "setup_stack.py")
+SCRIPT_FILES = ("_ravmem_http.py", "load_kg_context.py", "prune_kg.py", "check_onboarding.py")
 
 
 def main() -> int:

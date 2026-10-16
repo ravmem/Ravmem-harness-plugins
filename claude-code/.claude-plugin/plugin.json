@@ -17,16 +17,16 @@
     "server_url": {
       "type": "string",
       "title": "RavMem server URL",
-      "description": "Base URL of your RavMem server, without /mcp and without a trailing slash. The plugin connects to <URL>/mcp.",
-      "required": true,
+      "description": "Base URL of your RavMem server, without /mcp and without a trailing slash. Leave the default (http://localhost:7432) unless you changed the port. Set or change it later with /ravmem:ravmem-configure.",
+      "required": false,
       "default": "http://localhost:7432"
     },
     "token": {
       "type": "string",
       "title": "RavMem API token",
-      "description": "The admin token printed once at server startup, or a user token from 'ravmem auth create-token'. Needs at least repo:read, branch:read and kg:read; add kg:write to record memory and branch:index for project_sync.",
+      "description": "The admin token you put in your RavMem .env (RAVMEM_ADMIN_TOKEN), or a user token from 'ravmem auth create-token'. Not needed to install the plugin: set it after your server is running, see /ravmem:ravmem-configure. Needs at least repo:read, branch:read and kg:read; add kg:write to record memory and branch:index for project_sync.",
       "sensitive": true,
-      "required": true
+      "required": false
     },
     "kg_team": {
       "type": "string",

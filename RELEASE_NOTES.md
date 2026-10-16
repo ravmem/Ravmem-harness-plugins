@@ -36,13 +36,13 @@ Requires a RavMem server with the MCP revamp (the `/mcp` endpoint with 18 tools,
 - Installers for Cursor, Codex, Antigravity and Claude Desktop that discover the server and token from flags,
   `RAVMEM_SERVER_URL` / `RAVMEM_TOKEN`, then `~/.ravmem/client.json`, and check that the server answers.
 - Cursor install link generator that carries no secret by default.
-- **Server installer** (`scripts/setup_stack.py`, in every plugin): installs and activates the RavMem server with
-  Docker Compose. It fetches the latest compose file from `https://ravmem.com/docs/docker-compose.yml` on every run,
-  generates secrets into `~/.ravmem/stack/.env`, activates the license from a hidden terminal prompt (or
-  `RAVMEM_LICENSE_KEY`; never an argument), writes `~/.ravmem/client.json`, and offers to install `ravmem-cli`
-  (`--cli` / `--no-cli`). Safe to re-run. Exposed as
-  `/ravmem:ravmem-setup` (Claude Code), a Cursor command, a Codex prompt (`install_to_project.py --global`) and an
-  Antigravity skill.
+- **Guided server setup**: `/ravmem:ravmem-setup` (Claude Code), a Cursor command, a Codex prompt and an Antigravity
+  skill walk you through a new install: ask new or existing, who does the work and where, then download the latest
+  compose file from `https://ravmem.com/docs/docker-compose.yml` and write a sample `.env` (`CHANGE_ME` placeholders you
+  fill in yourself), start the stack, and have you activate the license with `ravmem license activate` in your own
+  terminal. The assistant never reads the `.env` and never sees the license key or admin token.
+  `/ravmem:ravmem-configure` (and equivalents) then connect the tool to the server.
+- Installing the Claude Code plugin no longer asks for `server_url` or `token`; set them afterwards.
 
 ### Changed
 
