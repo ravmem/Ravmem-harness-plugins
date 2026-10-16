@@ -243,8 +243,13 @@ RAVMEM_ADMIN_TOKEN=CHANGE_ME
 RAVMEM_PORT=7432
 RAVMEM_UI_PORT=3000
 
+# Optional. Leave blank. `ravmem license activate` asks for your license key in the terminal and keeps it on the
+# server's data volume, and `ravmem license repair` asks for it again only if it is missing there. Put the key here
+# only if you want the server to have it from the start (for example after recreating the data volume).
+# It is stored in plain text in this file, so keep the file private and out of git.
+RAVMEM_LICENSE_KEY=
+
 # License server used by `ravmem license activate`. Leave as is unless support told you otherwise.
-# Your license KEY does not go in this file: you type it when running `ravmem license activate`.
 RAVMEM_LICENSE_SERVER_URL=https://console.ravmem.com
 """
 
@@ -280,8 +285,8 @@ never read or print the `.env` file once it exists, and never run `docker compos
 
    - Tell the user to open `<folder>/.env` themselves and replace each `CHANGE_ME` (database password, an admin
      token of their choice, and the ports if they changed them). Wait until they say it is done, then check
-     with `grep -c '=CHANGE_ME' <folder>/.env` (it prints only a count). It must be 0. Remind them to keep the admin
-     token: they need it in steps 6 and 7.
+     with `grep -c '=CHANGE_ME' <folder>/.env` (it prints only a count). It must be 0. `RAVMEM_LICENSE_KEY` is optional and may stay blank; never ask the user to tell you the key. Remind them to keep the
+     admin token: they need it in steps 6 and 7.
 5. **Start the stack.** First check for clashes: `docker ps -a --format '{{{{.Names}}}}'` must not list `ravmem`, `arcadedb`
    or `ravmem-ui`, and the ports in `.env` must be free.
    - If you do it for them: `docker compose --project-directory <folder> up -d`, then wait for

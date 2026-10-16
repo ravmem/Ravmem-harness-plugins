@@ -40,7 +40,7 @@ Requires a RavMem server with the MCP revamp (the `/mcp` endpoint with 18 tools,
   skill walk you through a new install: ask new or existing, who does the work and where, then download the latest
   compose file from `https://ravmem.com/docs/docker-compose.yml` and write a sample `.env` (`CHANGE_ME` placeholders you
   fill in yourself), start the stack, and have you activate the license with `ravmem license activate` in your own
-  terminal. The assistant never reads the `.env` and never sees the license key or admin token.
+  terminal. The assistant never reads the `.env` and never sees the license key or admin token (`RAVMEM_LICENSE_KEY` in the sample `.env` is optional and left blank).
   `/ravmem:ravmem-configure` (and equivalents) then connect the tool to the server.
 - Installing the Claude Code plugin no longer requires `server_url` or `token`: leave them blank on the options screen and set
   them afterwards with `/ravmem:ravmem-configure` (the option descriptions say so).
