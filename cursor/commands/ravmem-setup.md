@@ -51,9 +51,13 @@ RAVMEM_LICENSE_SERVER_URL=https://console.ravmem.com
      admin token: they need it in steps 6 and 7.
 5. **Start the stack.** First check for clashes: `docker ps -a --format '{{.Names}}'` must not list `ravmem`, `arcadedb`
    or `ravmem-ui`, and the ports in `.env` must be free.
-   - If you do it for them: `docker compose --project-directory <folder> up -d`, then wait for
-     `curl -s http://localhost:<port>/health` to answer (the first start pulls images and can take a few minutes).
-   - If they do it: print `cd <folder> && docker compose up -d` and wait for them to confirm.
+   - **Always pull first.** `up -d` reuses any image already on the machine, and `latest` is not refreshed
+     automatically, so an old copy would start. Run `docker compose --project-directory <folder> pull`
+     (it downloads the current `ravmem`, `ravmem-ui` and `arcadedb` images), then start.
+   - If you do it for them: `docker compose --project-directory <folder> pull`, then
+     `docker compose --project-directory <folder> up -d`, then wait for `curl -s http://localhost:<port>/health` to
+     answer (the first start can take a few minutes).
+   - If they do it: print `cd <folder> && docker compose pull && docker compose up -d` and wait for them to confirm.
 6. **Activate the license** (the user does this in a normal terminal; the key and token are typed there and
    never shown to you). The RavMem CLI is the supported way to activate:
    ```
