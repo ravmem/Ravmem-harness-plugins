@@ -10,7 +10,10 @@ runs two SessionStart hooks.
 /plugin install ravmem@ravmem-integrations
 ```
 
-Installing asks for no options. Set them afterwards with `/ravmem:ravmem-configure` (or `/plugin` → ravmem):
+Installing shows a "Configure RavMem" screen, but **nothing on it is required**. If you don't have a RavMem server yet,
+leave `server_url` and `token` blank, move to **Save configuration** and press Enter (Esc cancels the install). Then run
+`/ravmem:ravmem-setup` to install a server and `/ravmem:ravmem-configure` to set the URL and token afterwards (you can
+also edit them any time in `/plugin` → ravmem). The options are:
 
 | Option | Default | Notes |
 |---|---|---|
