@@ -11,4 +11,4 @@ to `.codex/scripts/`. Re-run with `--force` to refresh the block.
 
 ## Install the server
 
-`python3 codex/scripts/install_to_project.py --global` also installs the `/prompts:ravmem-setup` prompt and `setup_stack.py` under `~/.codex/`. The script installs and activates the RavMem server with Docker; run it in a terminal so the license key is typed privately. See the repository README, "Installing the server".
+`python3 codex/scripts/install_to_project.py --global` also installs the `/prompts:ravmem-setup` and `/prompts:ravmem-configure` prompts under `~/.codex/prompts`. They guide you through writing the compose file and a sample `.env`, starting the stack and activating the license with the RavMem CLI. See the repository README, "Installing the server".

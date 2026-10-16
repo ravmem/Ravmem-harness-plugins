@@ -154,8 +154,8 @@ local git repo and uploads its **committed** files; an MCP server cannot read yo
 
 Do not run the CLI for the user unprompted — it uploads source code to the server.
 
-### 6. Installing the RavMem server
+### 6. Installing and connecting the RavMem server
 
-If the user wants the RavMem server itself installed and activated, do not do it for them: the license key must be typed privately. Tell them to run `python3 .agents/scripts/setup_stack.py` in a terminal. It fetches the latest Docker Compose file from https://ravmem.com/docs/docker-compose.yml, starts the stack and activates the license. Never ask for or print the license key or admin token.
+If the user wants a RavMem server installed, follow the `ravmem-setup` skill: write the Docker Compose file (downloaded fresh from https://ravmem.com/docs/docker-compose.yml) and a sample `.env`, start the stack, and have the user activate the license with `ravmem license activate` in their own terminal. Never ask for, read or print the license key, admin token or `.env`. To connect Antigravity to a running server, follow the `ravmem-configure` skill.
 
 <!-- END RAVMEM INSTRUCTIONS -->

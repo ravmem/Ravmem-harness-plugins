@@ -13,4 +13,4 @@ The `skills/` folder holds the same five skills as the Claude Code plugin, for u
 
 ## Install the server
 
-Claude Desktop has no shell, so it cannot run the server installer for you. In a terminal run `python3 claude-desktop/scripts/setup_stack.py` (Docker required); it starts and activates the RavMem server and writes `~/.ravmem/client.json`, which `install_config.py` then reads.
+Claude Desktop has no commands or shell, so follow the "Installing the server" steps in the repository README by hand (download the compose file, fill in `.env`, `docker compose up -d`, `ravmem license activate`), then run `install_config.py`.

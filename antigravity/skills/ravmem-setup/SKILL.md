@@ -1,25 +1,67 @@
 ---
 name: ravmem-setup
-description: Install and activate the RavMem server (Docker Compose) on this machine and connect this tool to it. User-invoked only.
+description: Set up RavMem: write the Docker Compose stack and a sample .env, start it, and activate the license with the RavMem CLI. User-invoked only.
 disable-model-invocation: true
 ---
 
-Set up the RavMem server on this machine. The installer downloads the **latest** Docker Compose file from
-https://ravmem.com/docs/docker-compose.yml (never a bundled copy), starts the stack, activates the license and
-writes `~/.ravmem/client.json` so this tool and the RavMem CLI can connect.
+Help the user get a RavMem server running. Go through these steps in order, one at a time, and ask before each
+action that changes something.
 
-**The license key must never pass through this chat.** Do not ask the user to paste it and do not run the
-installer yourself: it needs a real terminal to read the key without echo.
+**Secrets stay with the user.** Never ask the user to paste a license key, admin token or password into the chat,
+never read or print the `.env` file once it exists, and never run `docker compose down -v` (it deletes all data).
 
-1. Check Docker is usable: `docker compose version` and `docker info`. If either fails, tell the user to install
-   or start Docker (https://docs.docker.com/get-docker/) and stop.
-2. Ask the user to run `python3 .agents/scripts/setup_stack.py` in a terminal. They need their RavMem license key (it starts with `RAVMEM-`). Add `--port <n>`
-   or `--ui-port <n>` for non-default ports. In a shell without a terminal prompt they can export `RAVMEM_LICENSE_KEY`
-   first instead.
-3. The installer also offers to install the RavMem CLI (`ravmem-cli`), which is needed to index a repository.
-   Afterwards run the same script with `status` and report the result.
-4. The server URL and admin token are now in `~/.ravmem/client.json` (the token is also in `~/.ravmem/stack/.env`).
-   Run `python3 .agents/scripts/install_to_project.py --global` (or put the token in `.agents/mcp_config.json`) and restart Antigravity.
+1. **New or existing?** Ask: "Do you already have a RavMem server running, or do you want a new install?"
+   If it is already running, skip to step 6.
+2. **Docker.** Run `docker compose version` and `docker info`. If either fails, tell the user to install or start
+   Docker (https://docs.docker.com/get-docker/) and stop.
+3. **Who does it, and where?** Ask whether they want you to set it up for them, or to do it themselves while you
+   write the files and print the commands. Ask which folder to use (default: the current directory; create any
+   other path they give). If `docker-compose.yml` or `.env` already exists there, ask before touching it.
+4. **Write the files.**
+   - Compose file, always downloaded fresh, never from memory or an older copy:
+     `curl -fsSL -H "Cache-Control: no-cache" -o <folder>/docker-compose.yml https://ravmem.com/docs/docker-compose.yml`
+     If the download fails, stop and say so. Show the user the images it uses (`grep image: <folder>/docker-compose.yml`).
+   - Sample env file, only if there is no `.env` yet: `curl -fsSL -o <folder>/.env https://ravmem.com/docs/env.example` then `chmod 600 <folder>/.env`.
+     If that URL returns 404, write this text to `<folder>/.env` instead:
 
-If the installer reports an error, show it as is and suggest the fix it names. Never run `docker compose down -v`
-(it deletes all RavMem data) and never print the admin token or license key.
+```
+# RavMem stack settings, read by docker-compose.yml. Do not commit this file.
+# Replace each placeholder value below yourself; nothing here is generated for you.
+
+# Password for the ArcadeDB graph database. Use a long random string.
+ARCADEDB_PASSWORD=CHANGE_ME
+
+# Admin token for the RavMem server. Choose your own value, e.g. rv_admin_<random>.
+# You will give the same value to the RavMem CLI and to the plugin.
+RAVMEM_ADMIN_TOKEN=CHANGE_ME
+
+# Optional: change if these ports are taken on your machine.
+RAVMEM_PORT=7432
+RAVMEM_UI_PORT=3000
+
+# License server used by `ravmem license activate`. Leave as is unless support told you otherwise.
+# Your license KEY does not go in this file: you type it when running `ravmem license activate`.
+RAVMEM_LICENSE_SERVER_URL=https://console.ravmem.com
+```
+
+   - Tell the user to open `<folder>/.env` themselves and replace each `CHANGE_ME` (database password, an admin
+     token of their choice, and the ports if they changed them). Wait until they say it is done, then check
+     with `grep -c '=CHANGE_ME' <folder>/.env` (it prints only a count). It must be 0. Remind them to keep the admin
+     token: they need it in steps 6 and 7.
+5. **Start the stack.** First check for clashes: `docker ps -a --format '{{.Names}}'` must not list `ravmem`, `arcadedb`
+   or `ravmem-ui`, and the ports in `.env` must be free.
+   - If you do it for them: `docker compose --project-directory <folder> up -d`, then wait for
+     `curl -s http://localhost:<port>/health` to answer (the first start pulls images and can take a few minutes).
+   - If they do it: print `cd <folder> && docker compose up -d` and wait for them to confirm.
+6. **Activate the license** (the user does this in a normal terminal; the key and token are typed there and
+   never shown to you). The RavMem CLI is the supported way to activate:
+   ```
+   pip install ravmem-cli            # or: pipx install ravmem-cli, skip if `ravmem --version` works
+   ravmem remote config --url http://localhost:<port>
+   ravmem remote config --api-key <the admin token you put in .env>
+   ravmem license activate           # prompts for the license key (hidden)
+   ravmem license status             # should show ACTIVE
+   ```
+   Use their real port if it is not 7432. If they have not got a license key yet, point them to the RavMem console.
+7. **Connect this tool.** Tell the user to run the `ravmem-configure` skill to set the server URL and admin token, then
+   restart Antigravity.
