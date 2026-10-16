@@ -4,7 +4,7 @@
     python3 install_to_project.py [TARGET_DIR] [--global] [--server-url URL] [--force]
 
 Adds [mcp_servers.ravmem] (Streamable HTTP, token read from the RAVMEM_TOKEN environment variable) to
-<target>/.codex/config.toml, or to ~/.codex/config.toml with --global (which also installs the ravmem-setup prompt and script). Unless --global, it also merges the
+<target>/.codex/config.toml, or to ~/.codex/config.toml with --global (which also installs the ravmem-setup and ravmem-configure prompts). Unless --global, it also merges the
 RavMem rules into <target>/AGENTS.md and copies the maintenance scripts to <target>/.codex/scripts/.
 """
 
@@ -23,7 +23,7 @@ import connect  # noqa: E402
 FRAGMENT_FILE = CODEX_DIR / "AGENTS.md.fragment"
 PROMPTS_DIR = CODEX_DIR / "prompts"
 SCRIPTS_DIR = CODEX_DIR / "scripts"
-SCRIPT_FILES = ("_ravmem_http.py", "load_kg_context.py", "prune_kg.py", "check_onboarding.py", "setup_stack.py")
+SCRIPT_FILES = ("_ravmem_http.py", "load_kg_context.py", "prune_kg.py", "check_onboarding.py")
 BEGIN, END = "<!-- BEGIN RAVMEM INSTRUCTIONS -->", "<!-- END RAVMEM INSTRUCTIONS -->"
 
 CONFIG_TEMPLATE = """
@@ -82,14 +82,11 @@ def main() -> int:
     if args.is_global:
         codex_home = Path.home() / ".codex"
         _add_server(codex_home / "config.toml", url, args.force)
-        # The server installer is a user-level custom prompt (/prompts:ravmem-setup); Codex reads those from ~/.codex/prompts.
+        # The setup/configure helpers are user-level custom prompts (/prompts:ravmem-setup); Codex reads those from ~/.codex/prompts.
         (codex_home / "prompts").mkdir(parents=True, exist_ok=True)
-        (codex_home / "scripts").mkdir(parents=True, exist_ok=True)
         for src in PROMPTS_DIR.glob("*.md"):
             shutil.copy2(src, codex_home / "prompts" / src.name)
-        for name in ("_ravmem_http.py", "setup_stack.py"):
-            shutil.copy2(SCRIPTS_DIR / name, codex_home / "scripts" / name)
-        print(f"Installed the /prompts:ravmem-setup prompt and its script under {codex_home}")
+        print(f"Installed the /prompts:ravmem-setup and /prompts:ravmem-configure prompts under {codex_home}")
     else:
         target = Path(args.target).expanduser().resolve()
         if not target.is_dir():
