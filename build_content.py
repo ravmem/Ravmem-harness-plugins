@@ -10,7 +10,7 @@ here once and this script writes:
   antigravity/skills/*/SKILL.md      antigravity/rules/*.md
   cursor/rules/*.mdc                 codex/AGENTS.md(.fragment)
   antigravity/GEMINI.md(.fragment)
-  claude-code/commands/*.md   cursor/commands/*.md   codex/prompts/*.md   antigravity/skills/ravmem-{setup,configure}/
+  claude-code/commands/*.md   cursor/commands/*.md   codex/prompts/*.md   antigravity/skills/ravmem-{setup,configure}/  claude-desktop/skills/ravmem-{setup,configure}/
   <harness> ravmem-setup / ravmem-configure commands, prompts and skills (guided server install and connect)
   <harness>/scripts/*.py  (copied from core/scripts)
 
@@ -347,13 +347,78 @@ HARNESS = {
 }
 
 
+# Claude Desktop cannot run commands, so its skills guide the user to run each step in their own terminal.
+DESKTOP_SETUP_BODY = """\
+Help the user get a RavMem server running. Claude Desktop cannot run commands, so you explain each step and the user
+runs the commands in a terminal. Go one step at a time.
+
+**Secrets stay with the user.** Never ask them to paste a license key, admin token or password into this chat, and
+never ask them to show you their `.env`.
+
+1. **New or existing?** Ask: "Do you already have a RavMem server running, or do you want a new install?" If it is
+   already running, go to step 6.
+2. **Docker.** Ask them to run `docker compose version` and `docker info`. If either fails, point them to
+   https://docs.docker.com/get-docker/ and stop.
+3. **Where?** Ask which folder to use (a new empty folder is best).
+4. **Files.** Give them these commands (macOS/Linux; on Windows PowerShell use `Invoke-WebRequest -Uri <url> -OutFile <file>`
+   instead of `curl`, and skip `chmod`):
+   ```
+   mkdir -p <folder> && cd <folder>
+   curl -fsSL -H "Cache-Control: no-cache" -o docker-compose.yml {compose_url}
+   curl -fsSL -o .env {env_url} && chmod 600 .env
+   ```
+   If the second download returns 404, give them this text to save as `.env` instead:
+
+```
+{env_sample}```
+
+   Tell them to open `.env` themselves and replace each `CHANGE_ME` (a long random database password and an admin
+   token of their choice, plus the ports if they changed them). `RAVMEM_LICENSE_KEY` is optional and may stay blank.
+   They must keep the admin token: they need it in steps 6 and 7.
+5. **Start the stack.** `docker compose pull` first (it fetches the current images; `up` alone reuses an old cached
+   `latest`), then `docker compose up -d`. Then `curl -s http://localhost:7432/health` should answer (use their port).
+   If `ravmem`, `arcadedb` or `ravmem-ui` containers already exist from another install, have them resolve that first.
+6. **Activate the license** in a terminal (the key and token are typed there, never into this chat):
+   ```
+   pip install ravmem-cli            # or: pipx install ravmem-cli, skip if `ravmem --version` works
+   ravmem remote config --url http://localhost:7432
+   ravmem remote config --api-key <the admin token from .env>
+   ravmem license activate           # prompts for the license key (hidden)
+   ravmem license status             # should show ACTIVE
+   ```
+7. **Connect Claude Desktop** with the `ravmem-configure` skill.
+"""
+
+DESKTOP_CONFIGURE_BODY = """\
+Connect Claude Desktop to the RavMem server the user has running. You cannot run commands or see the admin token.
+
+1. Ask them to confirm the server is up and activated: `curl -s http://localhost:7432/health` and `ravmem license status`
+   (ACTIVE). If not, go back to the `ravmem-setup` skill.
+2. In the folder where they cloned this repository, ask them to run:
+   ```
+   python3 claude-desktop/scripts/install_config.py          # add --force to replace an existing ravmem entry
+   ```
+   It reads the server URL and admin token from `~/.ravmem/client.json`, which `ravmem remote config` already wrote, adds the
+   `ravmem` entry to `claude_desktop_config.json` (using the standard `mcp-remote` package, so Node.js is required), makes a
+   backup first and checks the server answers. The token goes into that file's `env` block (mode 600); it never appears here.
+3. Ask them to fully quit and reopen Claude Desktop. Then the `ravmem` tools should be listed; ask them to try
+   "list my RavMem projects".
+4. If the server answers 401, the token in `~/.ravmem/client.json` does not match `RAVMEM_ADMIN_TOKEN` in their `.env`:
+   re-run `ravmem remote config --api-key <token>` and then `install_config.py --force`.
+"""
+
+
 def setup_body(harness: str) -> str:
+    if harness == "claude-desktop":
+        return DESKTOP_SETUP_BODY.format(compose_url=COMPOSE_URL, env_url=ENV_URL, env_sample=ENV_SAMPLE)
     h = HARNESS[harness]
     return SETUP_BODY.format(compose_url=COMPOSE_URL, env_url=ENV_URL, env_sample=ENV_SAMPLE,
                              configure_cmd=h["configure"], tool=h["tool"])
 
 
 def configure_body(harness: str) -> str:
+    if harness == "claude-desktop":
+        return DESKTOP_CONFIGURE_BODY
     h = HARNESS[harness]
     return CONFIGURE_BODY.format(tool=h["tool"], setup_cmd=h["setup"].strip("`"), how=CONFIGURE_HOW[harness], verify=h["verify"])
 
@@ -464,6 +529,7 @@ def targets() -> dict[Path, str]:
         out[ROOT / "cursor" / "commands" / f"{name}.md"] = _plain(title, body_fn("cursor"))
         out[ROOT / "codex" / "prompts" / f"{name}.md"] = _plain(title, body_fn("codex"))
         out[ROOT / "antigravity" / "skills" / name / "SKILL.md"] = _skill(name, desc, body_fn("antigravity"))
+        out[ROOT / "claude-desktop" / "skills" / name / "SKILL.md"] = _skill(name, desc, body_fn("claude-desktop"))
 
     for src in sorted((ROOT / "core" / "scripts").glob("*.py")):
         for harness in ("claude-code", "claude-desktop", "antigravity", "cursor", "codex"):
