@@ -36,8 +36,8 @@ Requires a RavMem server with the MCP revamp (the `/mcp` endpoint with 18 tools,
 - Installers for Cursor, Codex, Antigravity and Claude Desktop that discover the server and token from flags,
   `RAVMEM_SERVER_URL` / `RAVMEM_TOKEN`, then `~/.ravmem/client.json`, and check that the server answers.
 - Cursor install link generator that carries no secret by default.
-- **Guided server setup**: `/ravmem:ravmem-setup` (Claude Code), a Cursor command, a Codex prompt and an Antigravity
-  skill walk you through a new install: ask new or existing, who does the work and where, then download the latest
+- **Guided server setup**: `/ravmem:ravmem-setup` (Claude Code), a Cursor command, a Codex prompt, an Antigravity
+  skill and Claude Desktop skills (guidance only there) walk you through a new install: ask new or existing, who does the work and where, then download the latest
   compose file from `https://ravmem.com/docs/docker-compose.yml` and write a sample `.env` (`CHANGE_ME` placeholders you
   fill in yourself), start the stack, and have you activate the license with `ravmem license activate` in your own
   terminal. The assistant never reads the `.env` and never sees the license key or admin token (`RAVMEM_LICENSE_KEY` in the sample `.env` is optional and left blank).

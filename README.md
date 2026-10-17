@@ -51,7 +51,7 @@ then set the server URL and token afterwards with the configure command.
 | Cursor | `/ravmem-setup` | `/ravmem-configure` |
 | Codex CLI | `/prompts:ravmem-setup` (after `install_to_project.py --global`) | `/prompts:ravmem-configure` |
 | Antigravity | the `ravmem-setup` skill | the `ravmem-configure` skill |
-| Claude Desktop | follow the steps below by hand | edit `claude_desktop_config.json` (see its README) |
+| Claude Desktop | the `ravmem-setup` skill (guidance only: it cannot run commands, you run them in a terminal) | the `ravmem-configure` skill (`install_config.py`) |
 
 What the setup flow does:
 
