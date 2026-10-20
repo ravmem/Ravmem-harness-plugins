@@ -342,7 +342,7 @@ CONFIGURE_HOW = {
              "to export it with their admin token before starting Codex.",
     "antigravity": "The MCP connection is not part of the plugin, so the token survives plugin updates. Ask the user to add this "
                    "entry to their own **global** `~/.gemini/config/mcp_config.json` (create the file if it does not exist, and merge "
-                   "into any existing `mcpServers`; if there is an old `ravmem` entry with a `command` (the removed local bridge), replace it), replacing `YOUR_RAVMEM_TOKEN` with their admin token themselves. Use their "
+                   "into any existing `mcpServers`), replacing `YOUR_RAVMEM_TOKEN` with their admin token themselves. Use their "
                    "URL if it is not the default, and keep the file private.\n"
                    "   ```json\n"
                    "   {\"mcpServers\": {\"ravmem\": {\n"
