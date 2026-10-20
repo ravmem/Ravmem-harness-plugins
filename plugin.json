@@ -1,0 +1,5 @@
+{
+  "$schema": "https://antigravity.google/schemas/v1/plugin.json",
+  "name": "ravmem",
+  "description": "Code-graph search, impact analysis and shared agent memory for your repos, backed by a self-hosted RavMem server over MCP. Run /ravmem-setup to install a server and /ravmem-configure to connect."
+}
