@@ -225,6 +225,37 @@ local git repo and uploads its **committed** files; an MCP server cannot read yo
    --incremental` from the repo; `project_sync` also works for projects the server cloned itself.
 
 Do not run the CLI for the user unprompted — it uploads source code to the server.""",
+        "antigravity_body": """\
+Onboarding is done by this skill end to end: **run the steps below yourself in the terminal** — do not hand
+the user commands to run. Invoking this skill (or asking you to onboard/index the repo) is the user's consent
+to upload the committed files to their RavMem server. Never do it on your own initiative otherwise.
+
+The RavMem CLI does the indexing because it reads the local git repo and uploads its **committed** files;
+an MCP server cannot read your disk.
+
+1. Check whether the repo is already indexed: `projects_list()`. If the project is there and its default
+   branch is ready, you are done — use the search and impact guidance. If the project exists but has no
+   ready branch, skip to step 4.
+2. Make sure the CLI is installed: `command -v ravmem || pip install ravmem-cli`.
+3. Check the CLI can reach the server: `~/.ravmem/client.json` must exist (`ravmem auth login` writes it). If
+   it is missing, this is the one thing you cannot do: ask the user to run `ravmem auth login` in their own
+   terminal and continue once they confirm. Never ask for, read or print their token.
+4. From the repo root, register and index it, using the repo directory name as `<project>` unless the user
+   gave one:
+
+   ```
+   ravmem remote add . --name <project>         # registers the project; skip if projects_list already shows it
+   ravmem analyze . --project <project> --wait  # uploads the committed files and indexes them
+   ```
+
+   `remote add` must come first: `analyze` fails with "Project not found" for an unregistered project. Add
+   `--langs python,typescript` to `analyze` to limit languages. If the repo has no commits, or the CLI reports
+   "no committed files", tell the user uncommitted changes are not uploaded and ask before committing anything.
+5. Confirm with `projects_list()` and `jobs(project=…)`. If your branch is not the project's default branch
+   (for example `master` while the project says `main`), the code tools answer "Branch … has no index" and list
+   the available branches; pass `branch` or fix the default with `ravmem remote` / `PATCH /api/projects/<id>`.
+   Later updates are `ravmem analyze . --project <project> --incremental` from the repo; `project_sync` also
+   works for projects the server cloned itself.""",
     },
 }
 
@@ -457,7 +488,11 @@ def _tool_ids(tools: list[str]) -> str:
     return "[" + ", ".join(f'"{PREFIX}{t}"' for t in tools) + "]"
 
 
-def skill_md(name: str, t: dict) -> str:
+def _body(t: dict, harness: str) -> str:
+    return t.get(f"{harness}_body", t["body"])
+
+
+def skill_md(name: str, t: dict, harness: str = "") -> str:
     return (
         "---\n"
         f"name: {name}\n"
@@ -465,7 +500,7 @@ def skill_md(name: str, t: dict) -> str:
         f"{t.get('skill_extra', '')}"
         f"allowed-tools: {_tool_ids(t['tools'])}\n"
         "---\n\n"
-        f"{t['body']}\n"
+        f"{_body(t, harness)}\n"
     )
 
 
@@ -488,7 +523,7 @@ def antigravity_rule(name: str, t: dict) -> str:
         "always_on: true\n"
         "---\n\n"
         f"# {t['title']}\n\n"
-        f"{t['body']}\n"
+        f"{_body(t, 'antigravity')}\n"
     )
 
 
@@ -508,7 +543,7 @@ def instructions_block(harness: str, config_key: str, setup_key: str) -> str:
     ]
     for i, name in enumerate(("ravmem-search", "ravmem-impact", "ravmem-memory", "ravmem-status", "ravmem-onboarding"), 1):
         t = TOPICS[name]
-        parts += [f"### {i}. {t['title']}", "", _demote(t["body"]), ""]
+        parts += [f"### {i}. {t['title']}", "", _demote(_body(t, setup_key)), ""]
     h = HARNESS[setup_key]
     parts += [
         "### 6. Installing and connecting the RavMem server",
@@ -535,7 +570,7 @@ def targets() -> dict[Path, str]:
     out: dict[Path, str] = {}
     for name, t in TOPICS.items():
         for harness in ("claude-code", "claude-desktop", "antigravity"):
-            out[ROOT / harness / "skills" / name / "SKILL.md"] = skill_md(name, t)
+            out[ROOT / harness / "skills" / name / "SKILL.md"] = skill_md(name, t, harness)
         out[ROOT / "cursor" / "rules" / f"{name}.mdc"] = cursor_mdc(name, t)
         out[ROOT / "antigravity" / "rules" / f"{name}.md"] = antigravity_rule(name, t)
 
