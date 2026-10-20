@@ -13,4 +13,7 @@ The `skills/` folder holds the same five skills as the Claude Code plugin, for u
 
 ## Install the server
 
-Claude Desktop has no commands or shell, so follow the "Installing the server" steps in the repository README by hand (download the compose file, fill in `.env`, `docker compose up -d`, `ravmem license activate`), then run `install_config.py`.
+Claude Desktop cannot run commands, so the `ravmem-setup` skill only guides you: it tells you which commands to run in a
+terminal (download the compose file, fill in `.env`, `docker compose pull && docker compose up -d`, `ravmem license activate`).
+Your license key, admin token and `.env` never go into the chat. Afterwards the `ravmem-configure` skill has you run
+`install_config.py`, which reads the server URL and token that `ravmem remote config` saved in `~/.ravmem/client.json`.
