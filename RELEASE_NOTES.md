@@ -42,6 +42,9 @@ Requires a RavMem server with the MCP revamp (the `/mcp` endpoint with 18 tools,
   fill in yourself), start the stack, and have you activate the license with `ravmem license activate` in your own
   terminal. The assistant never reads the `.env` and never sees the license key or admin token (`RAVMEM_LICENSE_KEY` in the sample `.env` is optional and left blank).
   `/ravmem:ravmem-configure` (and equivalents) then connect the tool to the server.
+- **Antigravity plugin**: the repository root is now an installable Antigravity plugin (`plugin.json`, `skills/`, `rules/`):
+  `agy plugin install https://github.com/ravmem/Ravmem-harness-plugins`. It ships skills and rules only; `/ravmem-configure` adds the
+  MCP connection to your own `~/.gemini/config/mcp_config.json`, so your token survives plugin updates.
 - Installing the Claude Code plugin no longer requires `server_url` or `token`: leave them blank on the options screen and set
   them afterwards with `/ravmem:ravmem-configure` (the option descriptions say so).
 
