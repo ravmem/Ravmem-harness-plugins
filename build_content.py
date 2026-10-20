@@ -11,6 +11,7 @@ here once and this script writes:
   cursor/rules/*.mdc                 codex/AGENTS.md(.fragment)
   antigravity/GEMINI.md(.fragment)
   claude-code/commands/*.md   cursor/commands/*.md   codex/prompts/*.md   antigravity/skills/ravmem-{setup,configure}/  claude-desktop/skills/ravmem-{setup,configure}/
+  plugin.json, skills/, rules/ at the repo root   (the repo root is an installable Antigravity plugin; no MCP config)
   <harness> ravmem-setup / ravmem-configure commands, prompts and skills (guided server install and connect)
   <harness>/scripts/*.py  (copied from core/scripts)
 
@@ -256,6 +257,14 @@ RAVMEM_LICENSE_SERVER_URL=https://console.ravmem.com
 COMPOSE_URL = "https://ravmem.com/docs/docker-compose.yml"
 ENV_URL = "https://ravmem.com/docs/env.example"
 
+ANTIGRAVITY_PLUGIN_JSON = """\
+{
+  "$schema": "https://antigravity.google/schemas/v1/plugin.json",
+  "name": "ravmem",
+  "description": "Code-graph search, impact analysis and shared agent memory for your repos, backed by a self-hosted RavMem server over MCP. Run /ravmem-setup to install a server and /ravmem-configure to connect."
+}
+"""
+
 SETUP_DESCRIPTION = "Set up RavMem: write the Docker Compose stack and a sample .env, start it, and activate the license with the RavMem CLI"
 CONFIGURE_DESCRIPTION = "Point this tool at your RavMem server: set the server URL and the admin token"
 
@@ -331,8 +340,16 @@ CONFIGURE_HOW = {
     "codex": "If the URL is not the default, ask the user to edit `url` under `[mcp_servers.ravmem]` in `~/.codex/config.toml` "
              "(or the project's `.codex/config.toml`). The token is read from the `RAVMEM_TOKEN` environment variable: ask the user "
              "to export it with their admin token before starting Codex.",
-    "antigravity": "Ask the user to open `.agents/mcp_config.json` (or `~/.gemini/config/mcp_config.json`) and set the URL "
-                   "(`<url>/mcp`) and replace `YOUR_RAVMEM_TOKEN` with their admin token themselves. Keep that file out of git.",
+    "antigravity": "The MCP connection is not part of the plugin, so the token survives plugin updates. Ask the user to add this "
+                   "entry to their own **global** `~/.gemini/config/mcp_config.json` (create the file if it does not exist, and merge "
+                   "into any existing `mcpServers`; if there is an old `ravmem` entry with a `command` (the removed local bridge), replace it), replacing `YOUR_RAVMEM_TOKEN` with their admin token themselves. Use their "
+                   "URL if it is not the default, and keep the file private.\n"
+                   "   ```json\n"
+                   "   {\"mcpServers\": {\"ravmem\": {\n"
+                   "     \"serverUrl\": \"http://localhost:7432/mcp\",\n"
+                   "     \"headers\": {\"Authorization\": \"Bearer YOUR_RAVMEM_TOKEN\", \"X-KG-Team\": \"default\", \"X-KG-Branch\": \"global\"}\n"
+                   "   }}}\n"
+                   "   ```",
 }
 
 HARNESS = {
@@ -530,6 +547,15 @@ def targets() -> dict[Path, str]:
         out[ROOT / "codex" / "prompts" / f"{name}.md"] = _plain(title, body_fn("codex"))
         out[ROOT / "antigravity" / "skills" / name / "SKILL.md"] = _skill(name, desc, body_fn("antigravity"))
         out[ROOT / "claude-desktop" / "skills" / name / "SKILL.md"] = _skill(name, desc, body_fn("claude-desktop"))
+
+    # Antigravity plugin = the repo root: plugin.json + skills/ + rules/ (agy prefers plugin.json over .claude-plugin).
+    # Skills + rules only. The MCP connection is deliberately left out so the user's token
+    # lives in their own mcp_config.json and survives plugin updates (see /ravmem-configure).
+    out[ROOT / "plugin.json"] = ANTIGRAVITY_PLUGIN_JSON
+    for path, content in list(out.items()):
+        parts = path.relative_to(ROOT).parts
+        if parts[0] == "antigravity" and parts[1] in ("skills", "rules"):
+            out[ROOT / Path(*parts[1:])] = content
 
     for src in sorted((ROOT / "core" / "scripts").glob("*.py")):
         for harness in ("claude-code", "claude-desktop", "antigravity", "cursor", "codex"):
