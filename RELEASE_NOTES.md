@@ -1,5 +1,14 @@
 # Release notes
 
+## Unreleased
+
+- **Antigravity onboarding indexes the repository itself.** The `ravmem-onboarding` skill installs the CLI,
+  registers the project and runs `ravmem analyze` for you; only `ravmem auth login` stays manual.
+- **`RAVMEM_LICENSE_KEY` is a `CHANGE_ME` placeholder in the sample `.env`**, matching the published
+  `env.example`. Replace it with your license key; `ravmem license repair` uses it to re-fetch your license
+  without asking again. The setup commands now check that no `CHANGE_ME` is left, license key included, and
+  still never read or print the key.
+
 ## 0.2.0 — Standard MCP, no local bridge
 
 Requires a RavMem server with the MCP revamp (the `/mcp` endpoint with 18 tools, 6 resource templates and

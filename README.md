@@ -58,12 +58,12 @@ What the setup flow does:
 1. Asks whether you already have a server or want a new install, and whether you or your assistant should do the work
    and in which folder.
 2. Downloads the **latest** compose file from `https://ravmem.com/docs/docker-compose.yml` (never a bundled copy) and
-   writes a sample `.env` with `CHANGE_ME` placeholders for the database password and the admin token. You fill those in
+   writes a sample `.env` with `CHANGE_ME` placeholders for the database password, the admin token and your license key. You fill those in
    yourself; the assistant never reads the file.
 3. Starts the stack with `docker compose up -d` (or prints the command if you prefer to run it).
 4. You activate the license in your own terminal with the RavMem CLI: `pip install ravmem-cli`,
    `ravmem remote config --url <url>`, `ravmem remote config --api-key <admin token>`, `ravmem license activate`.
-   Your license key is typed there. `RAVMEM_LICENSE_KEY` in `.env` is optional and normally left blank.
+   Your license key is typed there. Set `RAVMEM_LICENSE_KEY` in `.env` to the same key (the sample `.env` has a `CHANGE_ME` placeholder for it) so `ravmem license repair` can run without asking again.
 5. `ravmem-configure` then sets the plugin's server URL (default `http://localhost:7432`) and admin token.
 
 It needs Docker with Compose v2 and a RavMem license key.

@@ -275,11 +275,10 @@ RAVMEM_ADMIN_TOKEN=CHANGE_ME
 RAVMEM_PORT=7432
 RAVMEM_UI_PORT=3000
 
-# Optional. Leave blank. `ravmem license activate` asks for your license key in the terminal and keeps it on the
-# server's data volume, and `ravmem license repair` asks for it again only if it is missing there. Put the key here
-# only if you want the server to have it from the start (for example after recreating the data volume).
+# Your RavMem license key (provided at purchase). Replace CHANGE_ME with it. `ravmem license activate` also asks for the
+# key in the terminal, and `ravmem license repair` uses the value here to re-fetch your license without asking again.
 # It is stored in plain text in this file, so keep the file private and out of git.
-RAVMEM_LICENSE_KEY=
+RAVMEM_LICENSE_KEY=CHANGE_ME
 
 # License server used by `ravmem license activate`. Leave as is unless support told you otherwise.
 RAVMEM_LICENSE_SERVER_URL=https://console.ravmem.com
@@ -324,8 +323,8 @@ never read or print the `.env` file once it exists, and never run `docker compos
 {env_sample}```
 
    - Tell the user to open `<folder>/.env` themselves and replace each `CHANGE_ME` (database password, an admin
-     token of their choice, and the ports if they changed them). Wait until they say it is done, then check
-     with `grep -c '=CHANGE_ME' <folder>/.env` (it prints only a count). It must be 0. `RAVMEM_LICENSE_KEY` is optional and may stay blank; never ask the user to tell you the key. Remind them to keep the
+     token of their choice, their license key, and the ports if they changed them). Wait until they say it is done, then check
+     with `grep -c '=CHANGE_ME' <folder>/.env` (it prints only a count). It must be 0. Never ask the user to tell you the license key or read it from the file. Remind them to keep the
      admin token: they need it in steps 6 and 7.
 5. **Start the stack.** First check for clashes: `docker ps -a --format '{{{{.Names}}}}'` must not list `ravmem`, `arcadedb`
    or `ravmem-ui`, and the ports in `.env` must be free.
@@ -421,7 +420,7 @@ never ask them to show you their `.env`.
 {env_sample}```
 
    Tell them to open `.env` themselves and replace each `CHANGE_ME` (a long random database password and an admin
-   token of their choice, plus the ports if they changed them). `RAVMEM_LICENSE_KEY` is optional and may stay blank.
+   token of their choice, their license key in `RAVMEM_LICENSE_KEY`, plus the ports if they changed them). Never ask them to tell you the key.
    They must keep the admin token: they need it in steps 6 and 7.
 5. **Start the stack.** `docker compose pull` first (it fetches the current images; `up` alone reuses an old cached
    `latest`), then `docker compose up -d`. Then `curl -s http://localhost:7432/health` should answer (use their port).
